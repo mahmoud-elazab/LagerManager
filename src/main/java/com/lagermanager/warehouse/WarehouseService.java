@@ -2,33 +2,27 @@ package com.lagermanager.warehouse;
 
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class WarehouseService {
 
-    private final List<Warehouse> warehouses = new ArrayList<>();
-    private final AtomicLong idCounter = new AtomicLong(0);
+    private final WarehouseRepository warehouseRepository;
+
+    public WarehouseService(WarehouseRepository warehouseRepository) {
+        this.warehouseRepository = warehouseRepository;
+    }
 
     public Warehouse createWarehouse(Warehouse warehouse) {
-        warehouse.setId(idCounter.incrementAndGet());
-        warehouses.add(warehouse);
-        return warehouse;
+        return warehouseRepository.save(warehouse);
     }
 
     public List<Warehouse> getAllWarehouses() {
-        return warehouses;
+        return warehouseRepository.findAll();
     }
 
     public Warehouse getWarehouseById(Long id) {
-        for (Warehouse warehouse : warehouses) {
-            if (warehouse.getId().equals(id)) {
-                return warehouse;
-            }
-        }
-        return null;
+        return warehouseRepository.findById(id).orElse(null);
     }
 
     public Warehouse updateWarehouse(Long id, Warehouse updatedWarehouse) {
@@ -39,10 +33,10 @@ public class WarehouseService {
         warehouse.setName(updatedWarehouse.getName());
         warehouse.setLocation(updatedWarehouse.getLocation());
         warehouse.setCapacity(updatedWarehouse.getCapacity());
-        return warehouse;
+        return warehouseRepository.save(warehouse);
     }
 
     public void deleteWarehouse(Long id) {
-        warehouses.removeIf(warehouse -> warehouse.getId().equals(id));
+        warehouseRepository.deleteById(id);
     }
 }

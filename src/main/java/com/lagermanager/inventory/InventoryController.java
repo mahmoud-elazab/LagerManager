@@ -22,8 +22,8 @@ public class InventoryController {
     }
 
     @PostMapping
-    public Inventory createInventory(@RequestBody Inventory inventory) {
-        return inventoryService.createInventory(inventory);
+    public Inventory createInventory(@RequestBody InventoryRequest inventoryRequest) {
+        return inventoryService.createInventory(inventoryRequest);
     }
 
     @GetMapping
@@ -37,8 +37,8 @@ public class InventoryController {
     }
 
     @PutMapping("/{id}")
-    public Inventory updateInventory(@PathVariable Long id, @RequestBody Inventory updatedInventory) {
-        return inventoryService.updateInventory(id, updatedInventory);
+    public Inventory updateInventory(@PathVariable Long id, @RequestBody InventoryRequest inventoryRequest) {
+        return inventoryService.updateInventory(id, inventoryRequest);
     }
 
     @DeleteMapping("/{id}")

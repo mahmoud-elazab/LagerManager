@@ -1,19 +1,39 @@
 package com.lagermanager.inventory;
 
+import com.lagermanager.product.Product;
+import com.lagermanager.warehouse.Warehouse;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+
+@Entity
 public class Inventory {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long productId;
-    private Long warehouseId;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
+
     private int quantity;
 
     public Inventory() {
     }
 
-    public Inventory(Long id, Long productId, Long warehouseId, int quantity) {
+    public Inventory(Long id, Product product, Warehouse warehouse, int quantity) {
         this.id = id;
-        this.productId = productId;
-        this.warehouseId = warehouseId;
+        this.product = product;
+        this.warehouse = warehouse;
         this.quantity = quantity;
     }
 
@@ -25,20 +45,20 @@ public class Inventory {
         this.id = id;
     }
 
-    public Long getProductId() {
-        return productId;
+    public Product getProduct() {
+        return product;
     }
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
-    public Long getWarehouseId() {
-        return warehouseId;
+    public Warehouse getWarehouse() {
+        return warehouse;
     }
 
-    public void setWarehouseId(Long warehouseId) {
-        this.warehouseId = warehouseId;
+    public void setWarehouse(Warehouse warehouse) {
+        this.warehouse = warehouse;
     }
 
     public int getQuantity() {

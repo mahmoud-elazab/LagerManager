@@ -1,48 +1,69 @@
 package com.lagermanager.inventory;
 
+import com.lagermanager.product.Product;
+import com.lagermanager.product.ProductRepository;
+import com.lagermanager.warehouse.Warehouse;
+import com.lagermanager.warehouse.WarehouseRepository;
+
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class InventoryService {
 
-    private final List<Inventory> inventoryRecords = new ArrayList<>();
-    private final AtomicLong idCounter = new AtomicLong(0);
+    private final InventoryRepository inventoryRepository;
+    private final ProductRepository productRepository;
+    private final WarehouseRepository warehouseRepository;
 
-    public Inventory createInventory(Inventory inventory) {
-        inventory.setId(idCounter.incrementAndGet());
-        inventoryRecords.add(inventory);
-        return inventory;
+    public InventoryService(InventoryRepository inventoryRepository, ProductRepository productRepository,
+            WarehouseRepository warehouseRepository) {
+        this.inventoryRepository = inventoryRepository;
+        this.productRepository = productRepository;
+        this.warehouseRepository = warehouseRepository;
+    }
+
+    public Inventory createInventory(InventoryRequest request) {
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + request.getProductId()));
+        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
+                .orElseThrow(() -> new EntityNotFoundException("Warehouse not found: " + request.getWarehouseId()));
+
+        Inventory inventory = new Inventory();
+        inventory.setProduct(product);
+        inventory.setWarehouse(warehouse);
+        inventory.setQuantity(request.getQuantity());
+        return inventoryRepository.save(inventory);
     }
 
     public List<Inventory> getAllInventory() {
-        return inventoryRecords;
+        return inventoryRepository.findAll();
     }
 
     public Inventory getInventoryById(Long id) {
-        for (Inventory inventory : inventoryRecords) {
-            if (inventory.getId().equals(id)) {
-                return inventory;
-            }
-        }
-        return null;
+        return inventoryRepository.findById(id).orElse(null);
     }
 
-    public Inventory updateInventory(Long id, Inventory updatedInventory) {
+    public Inventory updateInventory(Long id, InventoryRequest request) {
         Inventory inventory = getInventoryById(id);
         if (inventory == null) {
             return null;
         }
-        inventory.setProductId(updatedInventory.getProductId());
-        inventory.setWarehouseId(updatedInventory.getWarehouseId());
-        inventory.setQuantity(updatedInventory.getQuantity());
-        return inventory;
+
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + request.getProductId()));
+        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
+                .orElseThrow(() -> new EntityNotFoundException("Warehouse not found: " + request.getWarehouseId()));
+
+        inventory.setProduct(product);
+        inventory.setWarehouse(warehouse);
+        inventory.setQuantity(request.getQuantity());
+        return inventoryRepository.save(inventory);
     }
 
     public void deleteInventory(Long id) {
-        inventoryRecords.removeIf(inventory -> inventory.getId().equals(id));
+        inventoryRepository.deleteById(id);
     }
 }
