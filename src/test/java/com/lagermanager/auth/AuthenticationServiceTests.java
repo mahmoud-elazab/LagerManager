@@ -1,6 +1,7 @@
 package com.lagermanager.auth;
 
 import com.lagermanager.security.CustomUserDetailsService;
+import com.lagermanager.security.JwtService;
 import com.lagermanager.security.SecurityConfig;
 import com.lagermanager.user.Role;
 import com.lagermanager.user.User;
@@ -35,7 +36,8 @@ class AuthenticationServiceTests {
         passwordEncoder = config.passwordEncoder();
         CustomUserDetailsService userDetailsService = new CustomUserDetailsService(userRepository);
         authenticationService = new AuthenticationService(config.authenticationManager(
-                config.authenticationProvider(userDetailsService, passwordEncoder)));
+                config.authenticationProvider(userDetailsService, passwordEncoder)), userRepository,
+                mock(JwtService.class));
     }
 
     @Test

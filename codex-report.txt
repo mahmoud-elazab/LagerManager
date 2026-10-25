@@ -1,40 +1,43 @@
-Phase 3, Step 4: Password authentication
+Phase 3, Step 6: Login REST API
 
 Implementation
-- Updated SecurityConfig with a DaoAuthenticationProvider using the existing CustomUserDetailsService and BCrypt PasswordEncoder.
-- Exposed AuthenticationManager as a ProviderManager using that provider.
-- Added auth/AuthenticationService with constructor-injected AuthenticationManager. authenticate(email, password) submits an unauthenticated UsernamePasswordAuthenticationToken and returns the authenticated Authentication result.
-- Spring Security handles password verification and account status checks; no manual hash comparison.
-- Kept the existing permitAll CRUD access, stateless session configuration, and CSRF configuration unchanged.
-- No Lombok, JWT, REST login endpoints, user creation in the database, manual database changes, or Git commands.
+- Added AuthController exposing POST /api/auth/login with JSON email and password input.
+- Added LoginRequest DTO with no-argument/full constructors and getters/setters, following existing DTO conventions.
+- Added LoginResponse DTO containing only token and tokenType (Bearer).
+- Extended AuthenticationService with constructor-injected UserRepository and JwtService. login() reuses authenticate(), retrieves the entity by the authenticated principal name, and calls JwtService.generateToken(). Spring Security continues to verify passwords and account status.
+- Successful login returns HTTP 200 with the signed JWT and Bearer token type.
+- Incorrect passwords, unknown users, and disabled accounts return the same generic HTTP 401 response. Missing/blank credentials, missing bodies, malformed JSON, and invalid body structures return generic HTTP 400 responses. Exception handlers are scoped to AuthController and do not return exception details or supplied input.
+- No user creation, JWT filters, role restrictions, Lombok, or Git commands. JwtService and SecurityConfig unchanged; existing CRUD access remains unchanged.
 
-Focused unit tests
-Added AuthenticationServiceTests with a mocked UserRepository and real CustomUserDetailsService, configured DaoAuthenticationProvider, ProviderManager, and BCrypt encoder.
-1. Correct password authenticates, preserves email and role authority, and erases credentials.
-2. Incorrect password throws BadCredentialsException.
-3. Disabled account throws DisabledException even when the password is correct.
-Test users exist only in memory; no database writes are performed by these unit tests.
+Tests
+Added AuthControllerTests using standalone MockMvc, a mocked UserRepository, and the real configured authentication provider, BCrypt encoder, AuthenticationService, and JwtService. Keys are generated ephemerally for tests. No test users are persisted.
+- Successful login returns a JWT that verifies and identifies the authenticated user, with Bearer type and no password fields.
+- Incorrect password, unknown email, and disabled account return generic 401 without a token.
+- Thirteen invalid-request cases return generic 400 without consulting the repository: missing fields, null fields, empty/whitespace fields, empty body, JSON null, malformed JSON, and array body.
+Updated existing authentication unit-test setup for the service's additional dependencies.
 
 Verification
 ./mvnw -DskipTests compile: BUILD SUCCESS, exit 0.
 ./mvnw test: BUILD SUCCESS, exit 0.
-AuthenticationServiceTests: 3 passed, 0 failures, 0 errors, 0 skipped.
-Existing application context test: 1 passed, 0 failures, 0 errors, 0 skipped.
-TOTAL: 4 passed, 0 failures, 0 errors, 0 skipped.
-The full suite ran outside the sandbox with permission because previous verification established sandbox restrictions block local MySQL access. The existing context test connects to MySQL using the unchanged application configuration.
+AuthControllerTests: 17 passed.
+AuthenticationServiceTests: 3 passed.
+JwtServiceTests: 8 passed.
+Application-context test: 1 passed.
+TOTAL: 29 passed, 0 failures, 0 errors, 0 skipped.
+The full test suite ran outside the sandbox with permission for the existing MySQL application-context test. New endpoint tests use no database. Standalone endpoint tests exercise HTTP mapping and serialization; they do not run the security filter chain. Existing SecurityConfig was left unchanged.
 
-Errors and warnings
+Problems and warnings
 No compilation errors or test failures.
-- Spring Security warns that automatic UserDetailsService login configuration is bypassed when an AuthenticationProvider bean exists. This is expected: the explicit DaoAuthenticationProvider already receives CustomUserDetailsService directly.
-- Hibernate warns the explicit MySQL dialect setting is redundant; automatic dialect detection is available.
-- Spring warns open-in-view is enabled by default and can allow database queries during view rendering.
-- Mockito/Byte Buddy self-attachment and dynamic-agent warnings concern future JDK compatibility. The JVM class-sharing warning comes from test instrumentation appending to the bootstrap classpath.
-These warnings do not prevent successful authentication or application startup. Unrelated configuration was not changed.
+Existing nonfatal warnings concern redundant MySQLDialect configuration, default open-in-view, Mockito/Byte Buddy dynamic instrumentation and JVM class sharing.
+Spring Security's automatic UserDetailsService configuration warning is expected because the explicit authentication provider already uses CustomUserDetailsService.
 
-Files changed
-src/main/java/com/lagermanager/security/SecurityConfig.java
+Changed files
+src/main/java/com/lagermanager/auth/AuthController.java
 src/main/java/com/lagermanager/auth/AuthenticationService.java
+src/main/java/com/lagermanager/auth/dto/LoginRequest.java
+src/main/java/com/lagermanager/auth/dto/LoginResponse.java
+src/test/java/com/lagermanager/auth/AuthControllerTests.java
 src/test/java/com/lagermanager/auth/AuthenticationServiceTests.java
 codex-report.txt (overwritten)
 
-This report contains no credentials or password hashes.
+No credentials, secrets, password hashes, or JWT values are included in this report.
