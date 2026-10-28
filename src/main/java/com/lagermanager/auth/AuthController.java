@@ -2,11 +2,14 @@ package com.lagermanager.auth;
 
 import com.lagermanager.auth.dto.LoginRequest;
 import com.lagermanager.auth.dto.LoginResponse;
+import com.lagermanager.auth.dto.CurrentUserResponse;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +34,11 @@ public class AuthController {
             throw new InvalidLoginRequestException();
         }
         return authenticationService.login(request.getEmail(), request.getPassword());
+    }
+
+    @GetMapping("/me")
+    public CurrentUserResponse currentUser(Authentication authentication) {
+        return authenticationService.currentUser(authentication.getName());
     }
 
     @ExceptionHandler(AuthenticationException.class)

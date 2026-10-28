@@ -7,7 +7,7 @@ const successBody = { token: 'fictional-test-token', tokenType: 'Bearer' }
 
 beforeEach(() => {
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
-    input === '/api/products' ? Promise.resolve(Response.json([])) : fetchMock(input, init))
+    input === '/api/auth/me' ? Promise.resolve(Response.json({ email: 'fictional@example.com', role: 'EMPLOYEE' })) : input === '/api/products' ? Promise.resolve(Response.json([])) : fetchMock(input, init))
 })
 afterEach(() => {
   cleanup()

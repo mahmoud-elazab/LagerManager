@@ -2,6 +2,8 @@ export type Product = {
   id: number | null
   name: string | null
   sku: string | null
+  description: string | null
+  priceText?: string | null
   category: string | null
   quantity: number
   price: number | null
@@ -20,11 +22,11 @@ function nullableText(value: unknown): value is string | null {
   return value === null || typeof value === 'string'
 }
 
-function isProduct(value: unknown): value is Product {
+export function isProduct(value: unknown): value is Product {
   if (typeof value !== 'object' || value === null) return false
   const item = value as Record<string, unknown>
   return (item.id === null || (typeof item.id === 'number' && Number.isSafeInteger(item.id)))
-    && nullableText(item.name) && nullableText(item.sku) && nullableText(item.category)
+    && nullableText(item.name) && nullableText(item.sku) && nullableText(item.description) && nullableText(item.category)
     && typeof item.quantity === 'number' && Number.isInteger(item.quantity)
     && item.quantity >= -2147483648 && item.quantity <= 2147483647
     && (item.price === null || (typeof item.price === 'number' && Number.isFinite(item.price)))
@@ -44,7 +46,7 @@ export async function loadProducts(token: string, signal: AbortSignal): Promise<
   if (!response.ok) throw new ProductsError('Unable to load products. Please try again later.', response.status)
   let data: unknown
   try {
-    data = await response.json()
+    data = parseProductJson(await response.text())
   } catch {
     throw new ProductsError('Unexpected product response. Please try again later.')
   }
@@ -52,4 +54,28 @@ export async function loadProducts(token: string, signal: AbortSignal): Promise<
     throw new ProductsError('Unexpected product response. Please try again later.')
   }
   return data
+}
+
+
+// Keep the original decimal literal as edit data, separate from the numeric display/model field.
+export function parseProductJson(text: string): unknown {
+  return JSON.parse(text, function (this: Record<string, unknown>, key: string, value: unknown,
+    context?: { source: string }) {
+    if (key === 'price' && typeof value === 'number') {
+      this.priceText = context ? decimalLiteral(context.source) : null
+    }
+    return value
+  })
+}
+
+function decimalLiteral(source: string): string | null {
+  const match = /^(-?)(\d+)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(source)
+  if (!match) return null
+  const exponent = Number(match[4] ?? 0)
+  if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 1000) return null
+  const digits = match[2] + (match[3] ?? '')
+  const point = match[2].length + exponent
+  return match[1] + (point <= 0 ? '0.' + '0'.repeat(-point) + digits
+    : point >= digits.length ? digits + '0'.repeat(point - digits.length)
+      : digits.slice(0, point) + '.' + digits.slice(point))
 }

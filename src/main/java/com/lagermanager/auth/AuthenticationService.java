@@ -1,6 +1,7 @@
 package com.lagermanager.auth;
 
 import com.lagermanager.auth.dto.LoginResponse;
+import com.lagermanager.auth.dto.CurrentUserResponse;
 import com.lagermanager.security.JwtService;
 import com.lagermanager.user.User;
 import com.lagermanager.user.UserRepository;
@@ -34,5 +35,12 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new BadCredentialsException("Authentication failed"));
         return new LoginResponse(jwtService.generateToken(user));
+    }
+
+    public CurrentUserResponse currentUser(String authenticatedEmail) {
+        User user = userRepository.findByEmail(authenticatedEmail)
+                .filter(User::isEnabled)
+                .orElseThrow(() -> new BadCredentialsException("Authentication failed"));
+        return new CurrentUserResponse(user.getEmail(), user.getRole());
     }
 }

@@ -1,6 +1,11 @@
 package com.lagermanager.warehouse;
 
 import org.springframework.stereotype.Service;
+import com.lagermanager.inventory.InventoryRepository;
+import com.lagermanager.inventory.InventoryReferenceConflictException;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -8,9 +13,11 @@ import java.util.List;
 public class WarehouseService {
 
     private final WarehouseRepository warehouseRepository;
+    private final InventoryRepository inventoryRepository;
 
-    public WarehouseService(WarehouseRepository warehouseRepository) {
+    public WarehouseService(WarehouseRepository warehouseRepository, InventoryRepository inventoryRepository) {
         this.warehouseRepository = warehouseRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     public Warehouse createWarehouse(Warehouse warehouse) {
@@ -36,7 +43,16 @@ public class WarehouseService {
         return warehouseRepository.save(warehouse);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     public void deleteWarehouse(Long id) {
-        warehouseRepository.deleteById(id);
+        Warehouse warehouse = warehouseRepository.findByIdForDeletion(id).orElse(null);
+        if (warehouse == null) {
+            return;
+        }
+        if (inventoryRepository.existsByWarehouse_Id(id)) {
+            throw new InventoryReferenceConflictException("warehouse");
+        }
+        warehouseRepository.delete(warehouse);
+        warehouseRepository.flush();
     }
 }

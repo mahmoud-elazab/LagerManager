@@ -32,8 +32,8 @@ h1 {
 h2 { font-size: 1.25rem; margin: 0 0 1.25rem; }
 .form-field { display: grid; gap: 0.5rem; margin-bottom: 1.25rem; }
 label { font-weight: 600; }
-input, button { font: inherit; width: 100%; border-radius: 0.4rem; padding: 0.8rem; }
-input { border: 1px solid #879aa7; background: #fff; color: inherit; min-width: 0; }
+input, select, button { font: inherit; width: 100%; border-radius: 0.4rem; padding: 0.8rem; }
+input, select { border: 1px solid #879aa7; background: #fff; color: inherit; min-width: 0; }
 button { border: 1px solid #245e49; background: #245e49; color: #fff; cursor: pointer; font-weight: 600; }
 button:hover:not(:disabled) { background: #194734; }
 button:disabled { opacity: 0.65; cursor: wait; }
@@ -49,7 +49,25 @@ button:disabled { opacity: 0.65; cursor: wait; }
 .products-screen p { line-height: 1.6; }
 .table-scroll { overflow-x: auto; margin-top: 1.5rem; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
-caption { text-align: left; margin-bottom: 0.75rem; color: #506575; }
 th, td { padding: 0.8rem; border-bottom: 1px solid #dce4e9; overflow-wrap: anywhere; }
 th { background: #f3f6f8; }
 @media (max-width: 480px) { th, td { padding: 0.6rem; } }
+
+.resource-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+.resource-nav button { width: auto; background: #fff; color: #245e49; }
+.resource-nav button[aria-current="page"] { background: #245e49; color: #fff; text-decoration: underline; text-underline-offset: 0.2em; }
+.resource-nav button:hover { background: #e7f1ec; color: #194734; }
+
+.quantity-editor { min-width: 15rem; }
+.quantity-editor label { display: block; margin-bottom: 0.5rem; }
+.quantity-editor p { font-size: 0.9rem; }
+.quantity-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.create-panel { margin: 1.5rem 0; }
+.create-panel form { max-width: 32rem; padding: 1.25rem; border: 1px solid #dce4e9; border-radius: 0.5rem; }
+
+.workspace-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.5rem; }
+.workspace-account { min-width: 0; overflow-wrap: anywhere; }
+.workspace-header h1 { margin-bottom: 1rem; }
+.workspace-header .logout-button { width: auto; flex-shrink: 0; margin-left: auto; }
+@media (max-width: 480px) { .workspace-header { flex-wrap: wrap; gap: 0.75rem; } }

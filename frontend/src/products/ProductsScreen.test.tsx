@@ -1,13 +1,15 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import App from '../App'
+import { WorkspaceHeader } from '../resources/WorkspaceHeader'
 import { ProductsScreen } from './ProductsScreen'
 
-const product = { id: 1, name: 'Fictional crate', sku: 'DEMO-1', category: 'Storage', quantity: 7, price: 12.5 }
+const product = { description: null, id: 1, name: 'Fictional crate', sku: 'DEMO-1', category: 'Storage', quantity: 7, price: 12.5 }
 const session = { token: 'fictional-session', tokenType: 'Bearer' as const }
 const fetchMock = vi.fn<typeof fetch>()
 
-beforeEach(() => vi.stubGlobal('fetch', fetchMock))
+beforeEach(() => vi.stubGlobal('fetch', (url: RequestInfo | URL, init?: RequestInit) =>
+    url === '/api/auth/me' ? Promise.resolve(Response.json({ email: 'fictional@example.com', role: 'EMPLOYEE' })) : fetchMock(url, init)))
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); fetchMock.mockReset() })
 
 function deferred() {
@@ -24,7 +26,7 @@ async function signIn() {
 }
 
 function renderProducts() {
-  return render(<ProductsScreen session={session} logout={vi.fn()} expireSession={vi.fn()} />)
+  return render(<><WorkspaceHeader logout={vi.fn()} /><ProductsScreen session={session} logout={vi.fn()} expireSession={vi.fn()} /></>)
 }
 
 it('loads with a Bearer header and displays an accessible populated table without invented currency', async () => {
@@ -34,7 +36,7 @@ it('loads with a Bearer header and displays an accessible populated table withou
   expect(fetchMock).toHaveBeenCalledWith('/api/products', {
     headers: { Authorization: `Bearer ${session.token}` }, credentials: 'omit', signal: expect.any(AbortSignal),
   })
-  expect(screen.getByRole('columnheader', { name: 'Product record quantity' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Quantity' })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '12.5' })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '7' })).toBeTruthy()
   expect(screen.getByRole('table').textContent).not.toMatch(/[$€£]/)
@@ -69,7 +71,7 @@ it('keeps logout available during loading and aborts on unmount', () => {
 it.each([403, 500, 502])('handles HTTP %s safely without clearing the session', async (status) => {
   fetchMock.mockResolvedValue(new Response('private internal details', { status }))
   const expire = vi.fn()
-  render(<ProductsScreen session={session} logout={vi.fn()} expireSession={expire} />)
+  render(<><WorkspaceHeader logout={vi.fn()} /><ProductsScreen session={session} logout={vi.fn()} expireSession={expire} /></>)
   const error = await screen.findByRole('alert')
   expect(error.textContent).toBe(status === 403
     ? 'Access denied. You do not have permission to view products.' : 'Unable to load products. Please try again later.')
