@@ -5,7 +5,10 @@ import App from './App'
 const fetchMock = vi.fn<typeof fetch>()
 const successBody = { token: 'fictional-test-token', tokenType: 'Bearer' }
 
-beforeEach(() => vi.stubGlobal('fetch', fetchMock))
+beforeEach(() => {
+  vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
+    input === '/api/products' ? Promise.resolve(Response.json([])) : fetchMock(input, init))
+})
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
@@ -34,7 +37,7 @@ describe('login and logout', () => {
     expect(screen.getByLabelText<HTMLInputElement>('Email').autocomplete).toBe('username')
     fillForm()
     submit()
-    await screen.findByRole('heading', { name: 'You’re signed in' })
+    await screen.findByRole('heading', { name: 'Products' })
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith('/api/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
       body: JSON.stringify({ email: 'fictional@example.com', password: ' fictional password ' }),

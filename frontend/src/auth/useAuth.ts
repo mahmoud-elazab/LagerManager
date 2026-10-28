@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { LoginError, loginRequest } from './loginApi'
 import type { LoginInput, LoginResponse } from './loginApi'
 
@@ -7,6 +7,7 @@ export function useAuth() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const submitting = useRef(false)
+  const currentSession = useRef<LoginResponse | null>(null)
 
   async function signIn(input: LoginInput): Promise<boolean> {
     if (submitting.current) return false
@@ -19,6 +20,7 @@ export function useAuth() {
     setError('')
     try {
       const response = await loginRequest(input)
+      currentSession.current = response
       setSession(response)
       return true
     } catch (failure) {
@@ -31,9 +33,17 @@ export function useAuth() {
   }
 
   function logout() {
+    currentSession.current = null
     setSession(null)
     setError('')
   }
 
-  return { signedIn: session !== null, signIn, logout, pending, error }
+  const expireSession = useCallback((expected: LoginResponse) => {
+    if (currentSession.current !== expected) return
+    currentSession.current = null
+    setSession(null)
+    setError('Please sign in again to continue.')
+  }, [])
+
+  return { session, signIn, logout, expireSession, pending, error }
 }

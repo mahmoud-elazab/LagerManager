@@ -1,5 +1,6 @@
 import { LoginForm } from './auth/LoginForm'
 import { useAuth } from './auth/useAuth'
+import { ProductsScreen } from './products/ProductsScreen'
 import './App.css'
 
 function App() {
@@ -7,15 +8,11 @@ function App() {
 
   return (
     <main className="auth-page">
-      <section className="auth-card" aria-labelledby="app-title">
+      <section className={auth.session ? "auth-card products-card" : "auth-card"} aria-labelledby="app-title">
         <p className="eyebrow">Warehouse &amp; Inventory Management</p>
         <h1 id="app-title">LagerManager</h1>
-        {auth.signedIn ? (
-          <div className="signed-in">
-            <h2 tabIndex={-1} ref={(element) => element?.focus()}>You’re signed in</h2>
-            <p>Your workspace will be available in a future step.</p>
-            <button onClick={auth.logout}>Logout</button>
-          </div>
+        {auth.session ? (
+          <ProductsScreen session={auth.session} logout={auth.logout} expireSession={auth.expireSession} />
         ) : <LoginForm signIn={auth.signIn} pending={auth.pending} error={auth.error} />}
       </section>
     </main>
