@@ -1,43 +1,48 @@
-Phase 3, Step 6: Login REST API
+Phase 4, Step 2: Frontend login and logout
 
-Implementation
-- Added AuthController exposing POST /api/auth/login with JSON email and password input.
-- Added LoginRequest DTO with no-argument/full constructors and getters/setters, following existing DTO conventions.
-- Added LoginResponse DTO containing only token and tokenType (Bearer).
-- Extended AuthenticationService with constructor-injected UserRepository and JwtService. login() reuses authenticate(), retrieves the entity by the authenticated principal name, and calls JwtService.generateToken(). Spring Security continues to verify passwords and account status.
-- Successful login returns HTTP 200 with the signed JWT and Bearer token type.
-- Incorrect passwords, unknown users, and disabled accounts return the same generic HTTP 401 response. Missing/blank credentials, missing bodies, malformed JSON, and invalid body structures return generic HTTP 400 responses. Exception handlers are scoped to AuthController and do not return exception details or supplied input.
-- No user creation, JWT filters, role restrictions, Lombok, or Git commands. JwtService and SecurityConfig unchanged; existing CRUD access remains unchanged.
+Exact files changed
+- frontend/vite.config.ts: development /api proxy targeting http://localhost:8080, preserving the entire /api path. Repository inspection found no backend port override.
+- frontend/src/App.tsx: login/signed-in placeholder/logout flow.
+- frontend/src/App.css: plain responsive form styling, focus indicators and error/loading states.
+- frontend/src/auth/LoginForm.tsx (created): labeled required email and password inputs with appropriate types/autocomplete, unchanged password submission, pending state, accessible error/status messages, duplicate-submit prevention, and explicit password clearing after success.
+- frontend/src/auth/useAuth.ts (created): React-memory-only authentication state, submission guard, safe errors and local logout. No storage, cookies, URL token transport, token logging or claim-based authorization.
+- frontend/src/auth/loginApi.ts (created): typed input/response, relative POST /api/auth/login using JSON and fetch with credentials omitted; validates successful response shape and maps HTTP/network/malformed response failures to fixed safe messages.
+- frontend/src/App.test.tsx (created): focused component-flow tests with mocked HTTP responses and fictional inputs.
+- frontend/package.json: added test script and local test devDependencies.
+- frontend/package-lock.json: updated and retained.
+- frontend/README.md: startup instructions, backend/MySQL requirements, development proxy, tests, production limitation and memory-only behavior.
+- codex-report.txt: overwritten.
 
-Tests
-Added AuthControllerTests using standalone MockMvc, a mocked UserRepository, and the real configured authentication provider, BCrypt encoder, AuthenticationService, and JwtService. Keys are generated ephemerally for tests. No test users are persisted.
-- Successful login returns a JWT that verifies and identifies the authenticated user, with Bearer type and no password fields.
-- Incorrect password, unknown email, and disabled account return generic 401 without a token.
-- Thirteen invalid-request cases return generic 400 without consulting the repository: missing fields, null fields, empty/whitespace fields, empty body, JSON null, malformed JSON, and array body.
-Updated existing authentication unit-test setup for the service's additional dependencies.
+Implemented behavior
+Valid successful responses require a nonempty token string without whitespace and tokenType Bearer. Tokens remain only in React state; the signed-in placeholder does not render them. Password values are sent without trimming or modification and cleared after successful login. Logout clears the session without any backend logout request. A fresh app mount/page refresh starts signed out. No routing, UI/global-state libraries, CRUD screens, registration, refresh tokens or additional API endpoints.
+No backend source/security/CORS changes, real-user authentication, database operations, global installations or Git commands.
 
 Verification
-./mvnw -DskipTests compile: BUILD SUCCESS, exit 0.
-./mvnw test: BUILD SUCCESS, exit 0.
-AuthControllerTests: 17 passed.
-AuthenticationServiceTests: 3 passed.
-JwtServiceTests: 8 passed.
-Application-context test: 1 passed.
-TOTAL: 29 passed, 0 failures, 0 errors, 0 skipped.
-The full test suite ran outside the sandbox with permission for the existing MySQL application-context test. New endpoint tests use no database. Standalone endpoint tests exercise HTTP mapping and serialization; they do not run the security filter chain. Existing SecurityConfig was left unchanged.
+Final npm run build: PASS, exit 0 (TypeScript and Vite build).
+Final npm run lint: PASS, exit 0 (Oxlint).
+Final npm test: PASS, exit 0; 18 passed, 0 failed in 1 test file.
+Tests cover successful login/request contract, unchanged input transmission, password clearing, no persistent-storage/cookie writes, logout, fresh-mount login requirement, rejected credentials, invalid input, network rejection/retry, server errors, malformed/non-JSON success responses, pending state and duplicate submissions.
+Test tooling added locally: Vitest 5.0.5, React Testing Library 16.3.3 and jsdom 30.1.3. npm install reported 0 vulnerabilities. No real credentials or real JWTs were used.
+An initial build command ran from the repository root and failed because package.json is under frontend; all final verification commands were run from frontend and passed.
+The first test run found one failure in clearing the detached password field after successful login. Fixed explicit field clearing; all 18 tests subsequently passed.
 
-Problems and warnings
-No compilation errors or test failures.
-Existing nonfatal warnings concern redundant MySQLDialect configuration, default open-in-view, Mockito/Byte Buddy dynamic instrumentation and JVM class sharing.
-Spring Security's automatic UserDetailsService configuration warning is expected because the explicit authentication provider already uses CustomUserDetailsService.
+Limitations and remaining problems
+No available browser surfaces were reported by the browser tool. Visual/browser verification of the mocked form and sign-in/logout flow remains pending; jsdom tests do not establish rendered layout quality.
+Tests mock fetch. They do not establish live backend connectivity, development-proxy connectivity to a running backend, real authentication, or production hosting behavior. Live manual login testing is deferred until after review as requested.
+npm reported an unapproved optional fsevents install script. It was not approved or run; build, lint and tests passed without it. No remaining verification failures.
 
-Changed files
-src/main/java/com/lagermanager/auth/AuthController.java
-src/main/java/com/lagermanager/auth/AuthenticationService.java
-src/main/java/com/lagermanager/auth/dto/LoginRequest.java
-src/main/java/com/lagermanager/auth/dto/LoginResponse.java
-src/test/java/com/lagermanager/auth/AuthControllerTests.java
-src/test/java/com/lagermanager/auth/AuthenticationServiceTests.java
-codex-report.txt (overwritten)
+Commands (from repository root)
+Start MySQL with the existing project database configuration. Supply the existing backend signing-secret environment setting through the local environment, then start the backend:
+  ./mvnw spring-boot:run
+In a separate terminal:
+  cd frontend
+  npm ci
+  npm run dev -- --host localhost --port 5173 --strictPort
+Open http://localhost:5173. Stop with Ctrl+C.
+For mocked tests and checks (from frontend):
+  npm test
+  npm run build
+  npm run lint
+The development proxy targets localhost:8080; production API forwarding is outside this step.
 
-No credentials, secrets, password hashes, or JWT values are included in this report.
+No passwords, signing secrets or JWT values are included in this report.

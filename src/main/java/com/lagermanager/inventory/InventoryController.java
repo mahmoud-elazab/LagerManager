@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.JsonNode;
 
 import java.util.List;
 
@@ -44,5 +48,16 @@ public class InventoryController {
     @DeleteMapping("/{id}")
     public void deleteInventory(@PathVariable Long id) {
         inventoryService.deleteInventory(id);
+    }
+
+    @PatchMapping("/{id}/quantity")
+    public Inventory updateQuantity(@PathVariable Long id, @RequestBody JsonNode body) {
+        // Check the JSON type before binding so fractions and strings cannot be coerced to integers.
+        JsonNode quantity = body.get("quantity");
+        if (quantity == null || !quantity.isIntegralNumber() || !quantity.canConvertToInt()
+                || quantity.intValue() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid quantity");
+        }
+        return inventoryService.updateQuantity(id, new InventoryQuantityRequest(quantity.intValue()));
     }
 }

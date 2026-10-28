@@ -8,6 +8,8 @@ import com.lagermanager.warehouse.WarehouseRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -65,5 +67,15 @@ public class InventoryService {
 
     public void deleteInventory(Long id) {
         inventoryRepository.deleteById(id);
+    }
+
+    public Inventory updateQuantity(Long id, InventoryQuantityRequest request) {
+        if (request.getQuantity() == null || request.getQuantity() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid quantity");
+        }
+        Inventory inventory = inventoryRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found"));
+        inventory.setQuantity(request.getQuantity());
+        return inventoryRepository.save(inventory);
     }
 }
