@@ -14,9 +14,13 @@ npm run dev -- --host localhost --port 5173 --strictPort
 
 Open http://localhost:5173; stop with Ctrl+C. Keep `package-lock.json`; no global packages or external fonts are needed.
 
+For the static Nginx container, see [frontend image build/run/stop and runtime API configuration](../docs/frontend-container.md). It uses host port 8082 and a required `API_UPSTREAM` such as `http://backend:8080` on a shared Docker network. This is separate from Vite's development proxy; normal development remains unchanged.
+
+For all three containers together, see [Compose setup](../docs/compose.md). A fresh Docker volume starts empty and never imports automatically. The normal local project now contains an [explicitly imported independent copy](../docs/database-copy.md) of the Mac demo data at http://localhost:8082. The proxy refreshes backend DNS after container replacement.
+
 Real login requires MySQL and the backend configured with `LAGERMANAGER_JWT_SECRET`, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD`. `SERVER_PORT` optionally overrides its port. Values are intentionally omitted here. See the [root setup instructions](../README.md). Start the configured backend using `./mvnw spring-boot:run` from the root.
 
-Vite forwards relative `/api` URLs to localhost:8080 and preserves the path. Update `vite.config.ts` if choosing another backend port. This proxy is for development only. Production API forwarding, hosting and deployment are outside Phase 4. No backend CORS changes are needed. `npm run preview -- --host localhost` previews the static build; it is not proof of production connectivity.
+Vite forwards relative `/api` URLs to localhost:8080 and preserves the path. Update `vite.config.ts` if choosing another backend port. This proxy is for development only. The container uses the separate Nginx proxy documented above; deployment remains outside this step. No backend CORS changes are needed. `npm run preview -- --host localhost` previews the static build; it is not proof of production connectivity.
 
 The existing local lagermanager database is the authorized demo database. Its named demo accounts are provisioned; use the ignored private account file and preserve unrelated existing records. No special profile or separate database is required. Automated tests remain isolated with fictional fixtures; there is no registration or automatic user creation during normal startup.
 

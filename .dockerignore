@@ -1,0 +1,30 @@
+# Allow only backend build inputs; local configuration/credentials never enter context.
+**
+!Dockerfile
+!.dockerignore
+!pom.xml
+!mvnw
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+!src/
+!src/main/
+!src/main/**
+# Defense in depth for local files accidentally placed under source directories.
+**/.git
+**/.idea
+**/node_modules
+**/target
+**/dist
+**/.env
+**/.env.*
+**/*.env
+**/*.log
+**/*.local.*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.jks
+**/codex-report.txt
+**/DEV_TEST_ACCOUNTS.local.md
+local-backups/

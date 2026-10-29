@@ -41,6 +41,8 @@ Open http://localhost:5173. Stop each process with Ctrl+C. Vite forwards relativ
 
 For local demo use, sign in with the named demo accounts in the existing lagermanager database. Preserve the original unrelated records. Population requires the explicit LAGERMANAGER_LOCAL_DEMO_POPULATE opt-in; normal startup never repeats it. Automated tests always use their own fresh disposable MySQL instance and never target this database. See the local demo guide for the merge and actual verification counts.
 
+The normal local Docker stack is also prepared: `docker compose up -d --wait` serves http://localhost:8082 using an independently imported Docker MySQL copy. The Mac database and IntelliJ/Vite workflow remain separate; changes do not synchronize. See [database copy and backup](docs/database-copy.md) and [Compose instructions](docs/compose.md). Fresh Docker volumes do not create application users or import data automatically.
+
 ## Permissions
 
 Backend authorization uses the user's current database role, never the role claim from an older JWT. `/api/auth/me` provides the frontend's display permissions; a later role change can still produce a server-side 403.
@@ -87,6 +89,10 @@ Frontend tests use mocked fetch with fictional data. Browser checks against HTTP
 
 ## Further documentation
 
+- [Docker Compose: frontend, backend and separate persistent MySQL](docs/compose.md)
+- [Imported local database, private backups and restore limitations](docs/database-copy.md)
+- [Backend Docker image: build, isolated verification, and manual host-MySQL startup](docs/backend-container.md)
+- [Frontend Docker image and runtime API proxy](docs/frontend-container.md)
 - [Stock/movement API and legacy quantity treatment](docs/stock-management.md)
 - [Explicit local demo setup and dataset](docs/local-demo.md)
 - [Frontend behavior and manual verification](frontend/README.md)

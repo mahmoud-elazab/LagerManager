@@ -2,6 +2,8 @@
 
 The existing local `jdbc:mysql://localhost:3306/lagermanager` database **is** the demo database. No separate database or Spring profile is required or created. Existing rows are preserved. Population is an explicit one-time action; normal startup never automatically populates or resets accounts.
 
+An authorized [logical copy](database-copy.md) now also exists in normal Compose MySQL and is served at http://localhost:8082. It is independent of this Mac database; changes do not synchronize. The existing IntelliJ/Vite startup below still uses Mac MySQL. Neither workflow automatically reseeds or imports.
+
 ## Normal startup
 
 Reuse the existing local datasource configuration and the existing `LAGERMANAGER_JWT_SECRET` from the `LagermanagerApplication` IntelliJ run configuration. Do not print or replace that signing key. Standard `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` or the existing `LAGERMANAGER_DB_*` aliases configure the connection. Authentication values are intentionally omitted from documentation.

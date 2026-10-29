@@ -38,3 +38,12 @@ build/
 
 # Disposable local demo credentials
 /DEV_TEST_ACCOUNTS.local.md
+
+# Private runtime environment configuration (the example has no values).
+.env
+.env.*
+!.env.example
+*.env
+
+# Private logical database backups (contain application authentication hashes).
+/local-backups/

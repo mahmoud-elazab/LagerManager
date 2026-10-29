@@ -1,0 +1,31 @@
+# Docker's embedded DNS refreshes recreated service addresses without reloading Nginx.
+resolver 127.0.0.11 valid=5s ipv6=off;
+resolver_timeout 2s;
+upstream lagermanager_api {
+    zone lagermanager_api 64k;
+    server ${API_UPSTREAM_HOSTPORT} resolve;
+}
+
+server {
+    listen 8080;
+    server_name _;
+    root /srv/lagermanager;
+    index index.html;
+
+    # No URI suffix on proxy_pass: retain the complete /api path and query.
+    location ~ ^/api(?:/|$) {
+        proxy_pass http://lagermanager_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host ${API_UPSTREAM_HOSTPORT};
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_intercept_errors off;
+        # Receipt/issue and other mutations must never be replayed automatically.
+        proxy_next_upstream off;
+    }
+
+    location /assets/ { try_files $uri =404; }
+    location / { try_files $uri $uri/ /index.html; }
+}
