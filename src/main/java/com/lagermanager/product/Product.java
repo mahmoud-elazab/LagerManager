@@ -1,6 +1,9 @@
 package com.lagermanager.product;
 
 import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hibernate.annotations.Formula;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,7 +19,11 @@ public class Product {
     private String name;
     private String sku;
     private String description;
+    // Legacy column retained for a future explicit migration; never used as stock.
     private int quantity;
+
+    @Formula("(select coalesce(sum(i.quantity), 0) from inventory i where i.product_id = id)")
+    private long totalStock;
     private BigDecimal price;
     private String category;
 
@@ -65,13 +72,18 @@ public class Product {
         this.description = description;
     }
 
+    @JsonIgnore
     public int getQuantity() {
         return quantity;
     }
 
+    @JsonIgnore
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public long getTotalStock() { return totalStock; }
 
     public BigDecimal getPrice() {
         return price;

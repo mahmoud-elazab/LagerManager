@@ -86,6 +86,7 @@ public final class DisposableMySql {
                         statement.execute("ALTER USER 'root'@'localhost' IDENTIFIED BY '" + PASSWORD + "'");
                         statement.execute("CREATE DATABASE lagermanager_context_test");
                         statement.execute("CREATE DATABASE lagermanager_reference_test");
+                        statement.execute("CREATE DATABASE lagermanager_demo_test");
                     }
                     return;
                 } catch (java.sql.SQLException unavailable) { Thread.sleep(100); }

@@ -6,7 +6,7 @@ import { createRecord, decimalPrice, wholeNumber } from './createApi'
 import type { CreationResource } from './createApi'
 
 type Props = { listReady: boolean; resource: Exclude<CreationResource, 'inventory'>; session: LoginResponse; expireSession: (session: LoginResponse) => void; reload: () => void }
-const initial = { name: '', sku: '', description: '', category: '', quantity: '0', price: '', location: '', capacity: '0' }
+const initial = { name: '', sku: '', description: '', category: '', price: '', location: '', capacity: '0' }
 
 export function CreatePanel({ resource, session, expireSession, reload, listReady }: Props) {
   const [open, setOpen] = useState(false)
@@ -29,10 +29,10 @@ export function CreatePanel({ resource, session, expireSession, reload, listRead
     event.preventDefault()
     if (busy.current || uncertain || denied) return
     if (!fields.name.trim() || (resource === 'products'
-      ? !fields.sku.trim() || !wholeNumber(fields.quantity) || !decimalPrice(fields.price)
+      ? !fields.sku.trim() || !decimalPrice(fields.price)
       : !fields.location.trim() || !wholeNumber(fields.capacity))) {
       setError(resource === 'products'
-        ? 'Check the required details. Use zero or a positive whole number for quantity and a valid price of zero or more.'
+        ? 'Check the required details. Enter the required details and a valid price of zero or more.'
         : 'Check the required details. Use zero or a positive whole number for capacity.')
       return
     }
@@ -44,7 +44,7 @@ export function CreatePanel({ resource, session, expireSession, reload, listRead
     try {
       const input = resource === 'products'
         ? { name: fields.name.trim(), sku: fields.sku.trim(), description: fields.description,
-          category: fields.category, quantity: Number(fields.quantity), price: fields.price }
+          category: fields.category, price: fields.price }
         : { name: fields.name.trim(), location: fields.location.trim(), capacity: Number(fields.capacity) }
       await createRecord(resource, input, session.token, controller.signal)
       if (!current.active || scope.current !== current) return
@@ -62,13 +62,13 @@ export function CreatePanel({ resource, session, expireSession, reload, listRead
       if (current.active && scope.current === current) { busy.current = false; setPending(false) }
     }
   }
-  const names = resource === 'products' ? ['name', 'sku', 'description', 'category', 'quantity', 'price'] as const
+  const names = resource === 'products' ? ['name', 'sku', 'description', 'category', 'price'] as const
     : ['name', 'location', 'capacity'] as const
   const labels = { name: 'Name', sku: 'SKU', description: 'Description', category: 'Category', quantity: 'Quantity',
     price: 'Price', location: 'Location', capacity: 'Capacity' }
   return <section className="create-panel" aria-label={`Create ${label}`}>
     {confirmed && <p role="status">{label === 'product' ? 'Product' : 'Warehouse'} created. The list is refreshing; if it cannot load, reload the list without submitting again.</p>}
-    {!open && !uncertain && !denied && <button disabled={!listReady} onClick={() => { setFields(initial); setError(''); setConfirmed(false); setOpen(true) }}>Add {label}</button>}
+    {!open && !uncertain && !denied && <button className="button-primary" disabled={!listReady} onClick={() => { setFields(initial); setError(''); setConfirmed(false); setOpen(true) }}>Add {label}</button>}
     {open && <form onSubmit={save} noValidate aria-busy={pending} aria-describedby={error ? `create-${label}-error` : undefined}>
       <h3>Add {label}</h3>
       {names.map((name) => <div className="form-field" key={name}>

@@ -8,6 +8,8 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
+    java.util.List<Warehouse> findAllByNameAndLocation(String name, String location);
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select warehouse from Warehouse warehouse where warehouse.id = :id")

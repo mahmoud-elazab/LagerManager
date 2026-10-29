@@ -2,7 +2,7 @@ import { DeletePanel } from '../deletion/DeletePanel'
 import { CreatePanel } from '../creation/CreatePanel'
 import { EditPanel } from '../editing/EditPanel'
 import { validRecordId } from '../resources/resourceApi'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LoginResponse } from '../auth/loginApi'
 import { loadProducts, ProductsError } from './productsApi'
 import type { Product } from './productsApi'
@@ -47,10 +47,11 @@ export function ProductsScreen({ session, expireSession, canCreate = false, canD
 
   function reload() { setOwner(session); setState({ kind: 'loading' }); setAttempt((value) => value + 1) }
 
+  const focusHeading = useCallback((element: HTMLHeadingElement | null) => element?.focus(), [])
   return (
     <div className="products-screen">
       <header className="products-header">
-        <h2 tabIndex={-1} ref={(element) => element?.focus()}>Products</h2>
+        <h2 tabIndex={-1} ref={focusHeading}>Products</h2>
         </header>
       {canCreate && !selection && <CreatePanel resource="products" session={session} expireSession={expireSession} reload={reload} listReady={state.kind === 'ready'} />}
       {canCreate && selection?.action === 'edit' && <EditPanel key={selection.version} resource="products" record={selection.record} session={session}
@@ -66,15 +67,15 @@ export function ProductsScreen({ session, expireSession, canCreate = false, canD
       {state.kind === 'ready' && (state.products.length === 0 ? <p role="status">No products found.</p> : (
         <div className="table-scroll" role="region" aria-label="Product list" tabIndex={0}>
           <table aria-label="Products">
-            <thead><tr>{['Name', 'SKU', 'Category', 'Quantity', 'Price'].map((heading) =>
-              <th key={heading} scope="col">{heading}</th>)}{(canCreate || canDelete) && <th scope="col">Actions</th>}</tr></thead>
+            <thead><tr>{['Name', 'SKU', 'Category', 'Total stock', 'Price'].map((heading) =>
+              <th key={heading} scope="col" className={['Total stock', 'Price'].includes(heading) ? 'numeric' : undefined}>{heading}</th>)}{(canCreate || canDelete) && <th scope="col" className="actions-cell">Actions</th>}</tr></thead>
             <tbody>{state.products.map((product, index) => <tr key={product.id ?? `row-${index}`}>
               <td>{product.name ?? 'Not specified'}</td><td>{product.sku ?? 'Not specified'}</td>
-              <td>{product.category ?? 'Not specified'}</td><td>{product.quantity}</td>
-              <td>{product.priceText ?? product.price ?? 'Not specified'}</td>
-              {(canCreate || canDelete) && <td>{validRecordId(product.id) && <>{canCreate && <button aria-label={`Edit product ${product.id}`}
+              <td>{product.category ?? 'Not specified'}</td><td className="numeric">{product.totalStock}</td>
+              <td className="numeric">{product.priceText ?? product.price ?? 'Not specified'}</td>
+              {(canCreate || canDelete) && <td className="actions-cell">{validRecordId(product.id) && <>{canCreate && <button aria-label={`Edit product ${product.id}`}
                 onClick={() => setSelection({ record: product, version: ++editVersion.current, session, action: 'edit' })}>Edit</button>}
-              {canDelete && <button aria-label={`Delete product ${product.id}`}
+              {canDelete && <button className="button-danger" aria-label={`Delete product ${product.id}`}
                 onClick={() => setSelection({ record: product, version: ++editVersion.current, session, action: 'delete' })}>Delete</button>}</>}</td>}
             </tr>)}</tbody>
           </table>

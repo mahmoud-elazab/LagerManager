@@ -87,7 +87,7 @@ export function InventoryCreatePanel({ session, expireSession, reload, listReady
   const usable = options.kind === 'ready' && options.products.length > 0 && options.warehouses.length > 0
   return <section className="create-panel" aria-label="Create inventory">
     {confirmed && <p role="status">Inventory created. The list is refreshing; if it cannot load, reload the list without submitting again.</p>}
-    {!open && !uncertain && !denied && <button disabled={!listReady} onClick={() => {
+    {!open && !uncertain && !denied && <button className="button-primary" disabled={!listReady} onClick={() => {
       setProductId(''); setWarehouseId(''); setQuantity('0'); setError(''); setConfirmed(false)
       setOptions({ kind: 'loading' }); setOpen(true)
     }}>Add inventory</button>}

@@ -14,7 +14,7 @@ type Props = { resource: EditableResource; record: Product | Warehouse; session:
 export function EditPanel({ resource, record, session, expireSession, reload, close }: Props) {
   const product = 'sku' in record ? record : null
   const [fields, setFields] = useState(() => ({ name: record.name ?? '', sku: product?.sku ?? '',
-    description: product?.description ?? '', category: product?.category ?? '', quantity: String(product?.quantity ?? 0),
+    description: product?.description ?? '', category: product?.category ?? '',
     price: product?.price === null ? '' : product?.priceText === null ? '' : product?.priceText ?? String(product?.price ?? ''),
     location: 'location' in record ? record.location ?? '' : '', capacity: 'capacity' in record ? String(record.capacity) : '0' }))
   const [touched, setTouched] = useState({ description: false, category: false })
@@ -35,9 +35,9 @@ export function EditPanel({ resource, record, session, expireSession, reload, cl
   async function save(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy.current || uncertain || blocked) return
-    if (!fields.name.trim() || (product ? !fields.sku.trim() || !wholeNumber(fields.quantity) || !decimalPrice(fields.price)
+    if (!fields.name.trim() || (product ? !fields.sku.trim() || !decimalPrice(fields.price)
       : !fields.location.trim() || !wholeNumber(fields.capacity))) {
-      setError(product ? 'Check the required details. Enter a valid whole-number quantity and a price of zero or more.'
+      setError(product ? 'Check the required details. Enter the required details and a price of zero or more.'
         : 'Check the required details. Enter zero or a positive whole number for capacity.')
       return
     }
@@ -50,7 +50,7 @@ export function EditPanel({ resource, record, session, expireSession, reload, cl
       const input = product ? { name: fields.name, sku: fields.sku,
         description: touched.description ? fields.description : product.description,
         category: touched.category ? fields.category : product.category,
-        quantity: Number(fields.quantity), price: fields.price }
+        price: fields.price }
         : { name: fields.name, location: fields.location, capacity: Number(fields.capacity) }
       await updateRecord(resource, record.id, input, session.token, controller.signal)
       if (!current.active || scope.current !== current) return
@@ -71,7 +71,7 @@ export function EditPanel({ resource, record, session, expireSession, reload, cl
     <p role="status">{product ? 'Product' : 'Warehouse'} updated. If the list cannot load, reload it without saving again.</p>
     <button onClick={close}>Close</button>
   </section>
-  const names = product ? ['name', 'sku', 'description', 'category', 'quantity', 'price'] as const
+  const names = product ? ['name', 'sku', 'description', 'category', 'price'] as const
     : ['name', 'location', 'capacity'] as const
   const labels = { name: 'Name', sku: 'SKU', description: 'Description', category: 'Category', quantity: 'Quantity',
     price: 'Price', location: 'Location', capacity: 'Capacity' }

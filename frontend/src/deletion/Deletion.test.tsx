@@ -6,7 +6,7 @@ import type { DeletableResource } from './deleteApi'
 
 const session = { token: 'fictional-session', tokenType: 'Bearer' as const }
 const account = { email: 'fictional@example.com', role: 'ADMIN' }
-const product = { id: 17, name: 'Example crate', sku: 'EX-1', description: 'Example description', category: null, quantity: 3, price: 12.5 }
+const product = { id: 17, name: 'Example crate', sku: 'EX-1', description: 'Example description', category: null, totalStock: 3, price: 12.5 }
 const warehouse = { id: 27, name: 'Example depot', location: 'Example location', capacity: 40 }
 const inventory = { id: 41, product, warehouse, quantity: 4 }
 const resources: DeletableResource[] = ['products', 'warehouses', 'inventory']
@@ -298,4 +298,15 @@ it('does not invent a linked-parent conflict for inventory record deletion', asy
   deleteMock.mockResolvedValue(Response.json({ code: 'INVENTORY_REFERENCE_CONFLICT', message: 'private details' }, { status: 409 }))
   await start('inventory'); await confirm('inventory'); remove()
   expect((await screen.findByRole('alert')).textContent).toBe('This item could not be deleted because of a conflict. Reload the list.')
+})
+
+it('keeps focus on the deletion control when pending state rerenders the confirmation', async () => {
+  const pending = deferred()
+  deleteMock.mockReturnValue(pending.promise)
+  await start('products'); await confirm('products')
+  const button = screen.getByRole('button', { name: 'Delete' })
+  button.focus(); fireEvent.click(button)
+  expect(screen.getByRole('button', { name: 'Deleting…' })).toBe(button)
+  expect(document.activeElement).toBe(button)
+  await act(async () => pending.resolve(new Response(null, { status: 204 })))
 })

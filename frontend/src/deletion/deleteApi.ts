@@ -24,6 +24,10 @@ export async function deleteRecord(resource: DeletableResource, id: number, toke
       && typeof body.message === 'string' && Boolean(body.message.trim())) {
       throw new ResourceError(`Inventory still uses this ${resource === 'products' ? 'product' : 'warehouse'}. It cannot be deleted.`, 409)
     }
+    if (resource === 'inventory' && typeof body === 'object' && body !== null && 'code' in body
+      && body.code === 'STOCK_HISTORY_CONFLICT') {
+      throw new ResourceError('Inventory with stock or movement history cannot be deleted.', 409)
+    }
     throw new ResourceError('This item could not be deleted because of a conflict. Reload the list.', 409)
   }
   if (!response.ok) throw new ResourceError('Deletion could not be confirmed. Reload the list to check whether the item still exists.', response.status)

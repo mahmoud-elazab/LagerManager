@@ -76,12 +76,12 @@ export function loadInventory(token: string, signal: AbortSignal): Promise<Inven
 
 
 export async function updateInventoryQuantity(id: number, quantity: number, token: string,
-  signal: AbortSignal): Promise<Inventory> {
+  signal: AbortSignal, reason: string): Promise<Inventory> {
   let response: Response
   try {
     response = await fetch(`/api/inventory/${id}/quantity`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      credentials: 'omit', signal, body: JSON.stringify({ quantity }),
+      credentials: 'omit', signal, body: JSON.stringify({ quantity, reason: reason.trim() }),
     })
   } catch {
     throw new ResourceError('Unable to confirm the save. Reload inventory to check the current quantity.')

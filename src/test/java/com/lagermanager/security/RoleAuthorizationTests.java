@@ -1,6 +1,7 @@
 package com.lagermanager.security;
 
 import com.lagermanager.inventory.*;
+import com.lagermanager.stock.*;
 import com.lagermanager.product.*;
 import com.lagermanager.warehouse.*;
 import com.lagermanager.user.Role;
@@ -66,6 +67,7 @@ class RoleAuthorizationTests {
         warehouseRepository = context.getBean(WarehouseRepository.class);
         doReturn(new Inventory()).when(inventoryService).createInventory(any());
         doReturn(new Inventory()).when(inventoryService).updateInventory(anyLong(), any());
+        doNothing().when(inventoryService).deleteInventory(anyLong());
     }
 
     @AfterEach
@@ -137,12 +139,12 @@ class RoleAuthorizationTests {
         Warehouse warehouse = new Warehouse();
         warehouse.setId(3L);
         Inventory existing = new Inventory(1L, product, warehouse, 10);
-        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(inventoryRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(inventoryRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(existing));
+        when(inventoryRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         mvc.perform(patch("/api/inventory/1/quantity").header("Authorization", "Bearer " + token(role))
                         .contentType("application/json")
-                        .content("{\"quantity\":25,\"id\":99,\"productId\":99,\"warehouseId\":99,"
+                        .content("{\"reason\":\"Cycle count\",\"quantity\":25,\"id\":99,\"productId\":99,\"warehouseId\":99,"
                                 + "\"product\":{\"id\":99},\"warehouse\":{\"id\":99}}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.quantity").value(25))
                 .andExpect(jsonPath("$.id").value(1)).andExpect(jsonPath("$.product.id").value(2))
@@ -151,17 +153,17 @@ class RoleAuthorizationTests {
         assertEquals(1L, existing.getId());
         assertSame(product, existing.getProduct());
         assertSame(warehouse, existing.getWarehouse());
-        verify(inventoryRepository).save(same(existing));
+        verify(inventoryRepository).saveAndFlush(same(existing));
         verifyNoInteractions(productRepository, warehouseRepository);
     }
 
     @Test
     void employeeCanSetZero() throws Exception {
         Inventory existing = new Inventory(1L, new Product(), new Warehouse(), 10);
-        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(inventoryRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(inventoryRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(existing));
+        when(inventoryRepository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
         mvc.perform(patch("/api/inventory/1/quantity").header("Authorization", "Bearer " + token(Role.EMPLOYEE))
-                        .contentType("application/json").content("{\"quantity\":0}"))
+                        .contentType("application/json").content("{\"reason\":\"Cycle count\",\"quantity\":0}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.quantity").value(0));
         assertEquals(0, existing.getQuantity());
     }
@@ -180,17 +182,17 @@ class RoleAuthorizationTests {
     @Test
     void unknownInventoryReturns404WithoutSaving() throws Exception {
         mvc.perform(patch("/api/inventory/99/quantity").header("Authorization", "Bearer " + token(Role.EMPLOYEE))
-                        .contentType("application/json").content("{\"quantity\":25}"))
+                        .contentType("application/json").content("{\"reason\":\"Cycle count\",\"quantity\":25}"))
                 .andExpect(status().isNotFound());
-        verify(inventoryRepository).findById(99L);
-        verify(inventoryRepository, never()).save(any());
+        verify(inventoryRepository).findByIdForUpdate(99L);
+        verify(inventoryRepository, never()).saveAndFlush(any());
         verifyNoInteractions(productRepository, warehouseRepository);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"missing", "invalid"})
     void quantityRequiresAuthentication(String auth) throws Exception {
-        var request = patch("/api/inventory/1/quantity").contentType("application/json").content("{\"quantity\":25}");
+        var request = patch("/api/inventory/1/quantity").contentType("application/json").content("{\"reason\":\"Cycle count\",\"quantity\":25}");
         if (auth.equals("invalid")) {
             request.header("Authorization", "Bearer invalid");
         }
@@ -207,12 +209,12 @@ class RoleAuthorizationTests {
         mvc.perform(delete("/api/products/1").header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
         mvc.perform(put("/api/inventory/1").header("Authorization", "Bearer " + token)
-                        .contentType("application/json").content("{\"quantity\":25}"))
+                        .contentType("application/json").content("{\"reason\":\"Cycle count\",\"quantity\":25}"))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(products, inventoryService);
         user.setRole(Role.MANAGER);
         mvc.perform(put("/api/products/1").header("Authorization", "Bearer " + token)
-                        .contentType("application/json").content("{\"quantity\":0}"))
+                        .contentType("application/json").content("{\"reason\":\"Cycle count\",\"quantity\":0}"))
                 .andExpect(status().isOk());
         user.setRole(Role.ADMIN);
         mvc.perform(delete("/api/products/1").header("Authorization", "Bearer " + token))
@@ -261,17 +263,22 @@ class RoleAuthorizationTests {
     @Configuration
     @EnableWebSecurity
     @EnableWebMvc
-    @Import({SecurityConfig.class, ProductController.class, WarehouseController.class, InventoryController.class})
+    @Import({SecurityConfig.class, ProductController.class, WarehouseController.class, InventoryController.class, StockExceptionHandler.class})
     static class TestConfig {
         @Bean UserRepository userRepository() { return mock(UserRepository.class); }
         @Bean ProductService productService() { return mock(ProductService.class); }
         @Bean WarehouseService warehouseService() { return mock(WarehouseService.class); }
+        @Bean StockMovementRepository stockMovementRepository() { return mock(StockMovementRepository.class); }
+        @Bean jakarta.persistence.EntityManager entityManager() { return mock(jakarta.persistence.EntityManager.class); }
+        @Bean StockService stockService(InventoryRepository inventory, StockMovementRepository movements, jakarta.persistence.EntityManager entityManager) {
+            return new StockService(inventory, movements, entityManager);
+        }
         @Bean InventoryRepository inventoryRepository() { return mock(InventoryRepository.class); }
         @Bean ProductRepository productRepository() { return mock(ProductRepository.class); }
         @Bean WarehouseRepository warehouseRepository() { return mock(WarehouseRepository.class); }
         @Bean InventoryService inventoryService(InventoryRepository inventory, ProductRepository products,
                                                WarehouseRepository warehouses) {
-            return spy(new InventoryService(inventory, products, warehouses));
+            return spy(new InventoryService(inventory, products, warehouses, stockService(inventory, stockMovementRepository(), entityManager()), stockMovementRepository()));
         }
         @Bean CustomUserDetailsService userDetailsService(UserRepository users) {
             return new CustomUserDetailsService(users);

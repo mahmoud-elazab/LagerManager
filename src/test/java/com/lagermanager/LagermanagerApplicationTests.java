@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @SpringBootTest
+@org.springframework.test.context.ActiveProfiles("test")
 @EnabledIf("com.lagermanager.support.DisposableMySql#isAvailable")
 class LagermanagerApplicationTests {
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import type { LoginResponse } from '../auth/loginApi'
 import { ResourceError } from '../resources/resourceApi'
@@ -49,17 +49,18 @@ export function DeletePanel({ resource, id, record, session, expireSession, relo
       if (current.active && scope.current === current) { busy.current = false; setPending(false) }
     }
   }
-  if (confirmed) return <section className="create-panel" aria-label={`Delete ${label.toLowerCase()}`}>
+  const focusHeading = useCallback((element: HTMLHeadingElement | null) => element?.focus(), [])
+  if (confirmed) return <section className="create-panel delete-panel" aria-label={`Delete ${label.toLowerCase()}`}>
     <p role="status">{label} removal request completed. If the list cannot load, reload it without deleting again.</p>
     <button onClick={close}>Close</button>
   </section>
-  return <section className="create-panel" aria-labelledby="delete-title">
+  return <section className="create-panel delete-panel" aria-labelledby="delete-title">
     <form onSubmit={remove} aria-describedby={`delete-description${error ? ' delete-error' : ''}`} aria-busy={pending}>
-      <h3 id="delete-title" tabIndex={-1} ref={(element) => element?.focus()}>Delete {label.toLowerCase()}?</h3>
+      <h3 id="delete-title" tabIndex={-1} ref={focusHeading}>Delete {label.toLowerCase()}?</h3>
       <p id="delete-description">{description}</p>
       {error && <p id="delete-error" role="alert" className="form-error">{error}</p>}
       <div className="quantity-actions">
-        <button type="submit" disabled={pending || Boolean(error)}>{pending ? 'Deleting…' : 'Delete'}</button>
+        <button className="button-danger-solid" type="submit" disabled={pending || Boolean(error)}>{pending ? 'Deleting…' : 'Delete'}</button>
         <button type="button" disabled={pending} onClick={close}>Cancel</button>
         {error && <button type="button" onClick={() => { close(); reload() }}>Reload list</button>}
       </div>

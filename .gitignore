@@ -35,3 +35,6 @@ build/
 
 # Local verification report
 /codex-report.txt
+
+# Disposable local demo credentials
+/DEV_TEST_ACCOUNTS.local.md

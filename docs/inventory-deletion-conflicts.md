@@ -50,3 +50,8 @@ These tests prove behavior on the freshly generated disposable schema and instal
 Only HTTP 409 with the validated code and a nonempty string message is recognized for product/warehouse deletion. The UI constructs a concise resource-specific explanation locally, keeps the row visible and allows Cancel to dismiss. It never renders the server message verbatim. Unknown/malformed 409 bodies remain generic. A 500 remains an uncertain outcome even if its body contains the conflict code. There is no automatic DELETE retry or inventory mutation. Existing 401/403 handling and stale-session/request protection remain unchanged.
 
 Manual UI verification after review should use mocks first, then disposable records in a designated test database. Do not use real records. Browser verification and deployed-constraint testing are separate from mocked frontend results.
+
+
+## Stock-history lifecycle update
+
+Inventory deletion now requires zero quantity and no movement history; otherwise it returns a safe `STOCK_HISTORY_CONFLICT` 409. History is never cascaded away or detached. Retained inventory continues to block product/warehouse deletion under this document's existing `INVENTORY_REFERENCE_CONFLICT` contract. Missing inventory deletion now returns 404. See [stock management](stock-management.md) for the coordinated API change and tests.

@@ -28,7 +28,9 @@ export function Workspace(props: Props) {
         <button key={resource} aria-current={selected === resource ? 'page' : undefined}
           onClick={() => setSelected(resource)}>{resource[0].toUpperCase() + resource.slice(1)}</button>)}
     </nav>
+    <section className="workspace-content" aria-label="Resource workspace">
     {selected === 'products' ? <ProductsScreen {...props} canCreate={canCreate} canDelete={canDelete} />
       : <ResourceScreen key={selected} resource={selected} {...props} canCreate={canCreate} canDelete={canDelete} />}
+    </section>
   </>
 }

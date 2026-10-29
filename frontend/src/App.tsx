@@ -7,8 +7,8 @@ function App() {
   const auth = useAuth()
 
   return (
-    <main className="auth-page">
-      <section className={auth.session ? "auth-card products-card" : "auth-card"} aria-labelledby="app-title">
+    <main className={auth.session ? "workspace-page" : "auth-page"}>
+      <section className={auth.session ? "workspace-shell" : "auth-card"} aria-labelledby="app-title">
         {!auth.session && <><p className="eyebrow">Warehouse &amp; Inventory Management</p>
         <h1 id="app-title">LagerManager</h1></>}
         {auth.session ? (

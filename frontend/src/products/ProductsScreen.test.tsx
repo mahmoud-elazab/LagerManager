@@ -4,7 +4,7 @@ import App from '../App'
 import { WorkspaceHeader } from '../resources/WorkspaceHeader'
 import { ProductsScreen } from './ProductsScreen'
 
-const product = { description: null, id: 1, name: 'Fictional crate', sku: 'DEMO-1', category: 'Storage', quantity: 7, price: 12.5 }
+const product = { description: null, id: 1, name: 'Fictional crate', sku: 'DEMO-1', category: 'Storage', totalStock: 7, price: 12.5 }
 const session = { token: 'fictional-session', tokenType: 'Bearer' as const }
 const fetchMock = vi.fn<typeof fetch>()
 
@@ -36,7 +36,7 @@ it('loads with a Bearer header and displays an accessible populated table withou
   expect(fetchMock).toHaveBeenCalledWith('/api/products', {
     headers: { Authorization: `Bearer ${session.token}` }, credentials: 'omit', signal: expect.any(AbortSignal),
   })
-  expect(screen.getByRole('columnheader', { name: 'Quantity' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Total stock' })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '12.5' })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '7' })).toBeTruthy()
   expect(screen.getByRole('table').textContent).not.toMatch(/[$€£]/)
@@ -44,7 +44,7 @@ it('loads with a Bearer header and displays an accessible populated table withou
 })
 
 it('handles nullable model fields', async () => {
-  fetchMock.mockResolvedValue(Response.json([{ id: null, name: null, sku: null, category: null, quantity: 0, price: null, description: null }]))
+  fetchMock.mockResolvedValue(Response.json([{ id: null, name: null, sku: null, category: null, totalStock: 0, price: null, description: null }]))
   renderProducts()
   await screen.findByRole('table')
   expect(screen.getAllByRole('cell', { name: 'Not specified' })).toHaveLength(4)
@@ -92,7 +92,7 @@ it('recovers from network failure with Retry', async () => {
   expect(fetchMock).toHaveBeenCalledTimes(2)
 })
 
-it.each([null, {}, [null], [{ ...product, quantity: null }], [{ ...product, quantity: 1.5 }],
+it.each([null, {}, [null], [{ ...product, totalStock: null }], [{ ...product, totalStock: 1.5 }],
   [{ ...product, price: '12.50' }], [{ ...product, name: 42 }], [{ ...product, sku: {} }],
   [{ ...product, category: false }], [{ ...product, id: '1' }], [{ name: 'incomplete' }]])(
   'rejects unexpected response shape %#', async (body) => {
@@ -134,6 +134,7 @@ it.each(['success', '401'])('ignores obsolete %s after logout and a newer login'
   })
   render(<App />)
   await signIn()
+  await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url === '/api/products')).toBe(true))
   const signal = fetchMock.mock.calls.find(([url]) => url === '/api/products')![1]!.signal!
   fireEvent.click(screen.getByRole('button', { name: 'Logout' }))
   expect(signal.aborted).toBe(true)
@@ -160,4 +161,16 @@ it('ignores an old 401 when the session prop changes without unmounting', async 
   expect(signal.aborted).toBe(true)
   expect(expire).not.toHaveBeenCalled()
   await waitFor(() => expect(screen.getByRole('cell', { name: product.name })).toBeTruthy())
+})
+
+// Loading completion must not take keyboard focus away from shared controls.
+it('keeps focus on Logout when a pending product list completes', async () => {
+  const pending = deferred()
+  fetchMock.mockReturnValue(pending.promise)
+  renderProducts()
+  const logout = screen.getByRole('button', { name: 'Logout' })
+  logout.focus()
+  await act(async () => pending.resolve(Response.json([product])))
+  await screen.findByRole('table', { name: 'Products' })
+  expect(document.activeElement).toBe(logout)
 })

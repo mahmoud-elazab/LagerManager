@@ -5,7 +5,7 @@ export type Product = {
   description: string | null
   priceText?: string | null
   category: string | null
-  quantity: number
+  totalStock: number
   price: number | null
 }
 
@@ -27,8 +27,7 @@ export function isProduct(value: unknown): value is Product {
   const item = value as Record<string, unknown>
   return (item.id === null || (typeof item.id === 'number' && Number.isSafeInteger(item.id)))
     && nullableText(item.name) && nullableText(item.sku) && nullableText(item.description) && nullableText(item.category)
-    && typeof item.quantity === 'number' && Number.isInteger(item.quantity)
-    && item.quantity >= -2147483648 && item.quantity <= 2147483647
+    && typeof item.totalStock === 'number' && Number.isSafeInteger(item.totalStock) && item.totalStock >= 0
     && (item.price === null || (typeof item.price === 'number' && Number.isFinite(item.price)))
 }
 

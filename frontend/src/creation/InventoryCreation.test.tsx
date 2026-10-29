@@ -5,7 +5,7 @@ import { Workspace } from '../resources/Workspace'
 
 const session = { token: 'fictional-session', tokenType: 'Bearer' as const }
 const account = { email: 'fictional@example.com', role: 'ADMIN' }
-const product = { description: null, id: 17, name: 'Example crate', sku: 'EX-1', category: null, quantity: 999, price: 12.5 }
+const product = { description: null, id: 17, name: 'Example crate', sku: 'EX-1', category: null, totalStock: 999, price: 12.5 }
 const warehouse = { id: 27, name: 'Example depot', location: 'Example location', capacity: 40 }
 const inventory = { id: 41, product, warehouse, quantity: 3 }
 const fetchMock = vi.fn<typeof fetch>()
@@ -312,9 +312,9 @@ it('keeps table names and natural labels without developer notes or visible mile
   const forbidden = /view only|backend|specified currency|capacity unit|Quantity belongs|Adding a product|Absolute quantity|2147483647/i
   fireEvent.click(screen.getByRole('button', { name: 'Products' }))
   await screen.findByRole('table', { name: 'Products' })
-  expect(screen.getByRole('columnheader', { name: 'Quantity' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Total stock' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Add product' }))
-  expect(screen.getByLabelText('Quantity')).toBeTruthy()
+  expect(screen.queryByLabelText('Quantity')).toBeNull()
   expect(screen.getByLabelText('Price')).toBeTruthy()
   expect(document.body.textContent).not.toMatch(forbidden)
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))

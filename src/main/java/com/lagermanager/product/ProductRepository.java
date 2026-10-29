@@ -8,6 +8,8 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
+    java.util.List<Product> findAllBySku(String sku);
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select product from Product product where product.id = :id")

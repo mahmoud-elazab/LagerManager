@@ -5,7 +5,7 @@ import { WorkspaceHeader } from './WorkspaceHeader'
 import { InventoryScreen } from './InventoryScreen'
 
 const session = { token: 'fictional-test-session', tokenType: 'Bearer' as const }
-const product = { description: null, id: 9, name: 'Fictional crate', sku: 'DEMO', category: null, quantity: 999, price: null }
+const product = { description: null, id: 9, name: 'Fictional crate', sku: 'DEMO', category: null, totalStock: 999, price: null }
 const warehouse = { id: 8, name: 'Fictional depot', location: 'Example location', capacity: 80 }
 const item = { id: 37, product, warehouse, quantity: 12 }
 const fetchMock = vi.fn<typeof fetch>()
@@ -37,7 +37,7 @@ async function start() {
 }
 function edit() { fireEvent.click(screen.getByRole('button', { name: 'Edit quantity for inventory 37' })) }
 function change(value: string) { fireEvent.change(screen.getByLabelText('Quantity for inventory 37'), { target: { value } }) }
-function save() { fireEvent.click(screen.getByRole('button', { name: 'Save' })) }
+function save() { fireEvent.change(screen.getByLabelText('Reason (required)'), { target: { value: 'Cycle count' } }); fireEvent.click(screen.getByRole('button', { name: 'Save' })) }
 
 it('shows current quantity, discards Cancel and never changes associations', async () => {
   await start(); edit()
@@ -60,14 +60,14 @@ it.each([0, 25, 2147483647])('sends exact ID-based PATCH for quantity %s and upd
   expect(screen.queryByText('Quantity updated for inventory 37.')).toBeNull()
   expect(patchMock).toHaveBeenCalledExactlyOnceWith('/api/inventory/37/quantity', {
     method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
-    credentials: 'omit', signal: expect.any(AbortSignal), body: JSON.stringify({ quantity }),
+    credentials: 'omit', signal: expect.any(AbortSignal), body: JSON.stringify({ quantity, reason: 'Cycle count' }),
   })
   await act(async () => pending.resolve(Response.json({ ...item, quantity })))
   expect((await screen.findByRole('status')).textContent).toBe('Quantity updated for inventory 37.')
   expect(screen.getByRole('cell', { name: String(quantity) })).toBeTruthy()
   expect(screen.getByRole('cell', { name: product.name })).toBeTruthy()
   expect(screen.getByRole('cell', { name: warehouse.location })).toBeTruthy()
-  expect(screen.queryByRole('cell', { name: String(product.quantity) })).toBeNull()
+  expect(screen.queryByRole('cell', { name: String(product.totalStock) })).toBeNull()
 })
 
 it('never replaces associations from a quantity response', async () => {
@@ -93,6 +93,7 @@ it('prevents duplicate saves and shows saving state', async () => {
   patchMock.mockReturnValue(pending.promise)
   await start(); edit(); change('15')
   const form = screen.getByLabelText('Quantity for inventory 37').closest('form')!
+  fireEvent.change(screen.getByLabelText('Reason (required)'), { target: { value: 'Cycle count' } })
   fireEvent.submit(form); fireEvent.submit(form)
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Saving…' }).disabled).toBe(true)
   expect(screen.getByLabelText<HTMLInputElement>('Quantity for inventory 37').disabled).toBe(true)

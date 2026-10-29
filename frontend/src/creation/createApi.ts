@@ -1,7 +1,7 @@
 import { isProduct } from '../products/productsApi'
 import { isWarehouse, isInventory, ResourceError } from '../resources/resourceApi'
 
-export type ProductInput = { name: string; sku: string; description: string | null; category: string | null; quantity: number; price: string }
+export type ProductInput = { name: string; sku: string; description: string | null; category: string | null; price: string }
 export type WarehouseInput = { name: string; location: string; capacity: number }
 export type InventoryInput = { productId: number; warehouseId: number; quantity: number }
 export type CreationInput = ProductInput | WarehouseInput | InventoryInput
@@ -54,5 +54,5 @@ export async function createRecord(resource: CreationResource, input: CreationIn
 export function productBody(input: ProductInput): string {
   if (!decimalPrice(input.price)) throw new ResourceError('Enter a valid price.')
   return JSON.stringify({ name: input.name, sku: input.sku, description: input.description,
-    category: input.category, quantity: input.quantity }).slice(0, -1) + `,"price":${exactDecimal(input.price)}}`
+    category: input.category }).slice(0, -1) + `,"price":${exactDecimal(input.price)}}`
 }

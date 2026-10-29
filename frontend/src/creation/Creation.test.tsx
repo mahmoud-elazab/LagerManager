@@ -6,7 +6,7 @@ import type { CreationResource } from './createApi'
 
 const account = { email: 'fictional@example.com', role: 'ADMIN' }
 const session = { token: 'fictional-session', tokenType: 'Bearer' }
-const product = { id: 17, name: 'Example crate', sku: 'EX-1', description: 'Example description', category: 'Storage', quantity: 3, price: 12.5 }
+const product = { id: 17, name: 'Example crate', sku: 'EX-1', description: 'Example description', category: 'Storage', totalStock: 3, price: 12.5 }
 const warehouse = { id: 27, name: 'Example depot', location: 'Example location', capacity: 40 }
 const fetchMock = vi.fn<typeof fetch>()
 const meMock = vi.fn<typeof fetch>()
@@ -48,7 +48,7 @@ function fill(resource: CreationResource) {
   change('Name', resource === 'products' ? product.name : warehouse.name)
   if (resource === 'products') {
     change('SKU', product.sku); change('Description', product.description); change('Category', product.category)
-    change('Quantity', '3'); change('Price', '12.50')
+    change('Price', '12.50')
   } else { change('Location', warehouse.location); change('Capacity', '40') }
 }
 function save() { fireEvent.click(screen.getByRole('button', { name: 'Save' })) }
@@ -138,7 +138,7 @@ it.each(resources)('creates %s with exact payload and refreshes only after confi
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Saving…' }).disabled).toBe(true)
   expect(screen.getByRole('button', { name: 'Logout' })).toBeTruthy()
   expect(listMock.mock.calls.length).toBe(before)
-  const payload = resource === 'products' ? '{"name":"Example crate","sku":"EX-1","description":"Example description","category":"Storage","quantity":3,"price":12.50}'
+  const payload = resource === 'products' ? '{"name":"Example crate","sku":"EX-1","description":"Example description","category":"Storage","price":12.50}'
     : '{"name":"Example depot","location":"Example location","capacity":40}'
   expect(postMock).toHaveBeenCalledWith(`/api/${resource}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
@@ -154,11 +154,11 @@ it.each(resources)('creates %s with exact payload and refreshes only after confi
 it('preserves price decimal digits without rounding input and accepts zero', async () => {
   postMock.mockResolvedValue(Response.json(product))
   await start(); await open('products'); fill('products')
-  change('Quantity', '0'); change('Price', '0.123456789012345678901')
+  change('Price', '0.123456789012345678901')
   save()
   await screen.findByText(/Product created/)
   expect(postMock.mock.calls[0][1]!.body).toContain('"price":0.123456789012345678901')
-  expect(postMock.mock.calls[0][1]!.body).toContain('"quantity":0')
+  expect(postMock.mock.calls[0][1]!.body).not.toContain('quantity')
 })
 
 it('accepts zero capacity', async () => {
@@ -169,8 +169,8 @@ it('accepts zero capacity', async () => {
 })
 
 const invalid = [
-  ['products', 'Name', ' '], ['products', 'SKU', ''], ['products', 'Quantity', ''],
-  ['products', 'Quantity', '-1'], ['products', 'Quantity', '1.5'], ['products', 'Quantity', '2147483648'],
+  ['products', 'Name', ' '], ['products', 'SKU', ''], 
+    
   ['products', 'Price', ''], ['products', 'Price', '-1'], ['products', 'Price', '1e3'], ['products', 'Price', 'NaN'],
   ['warehouses', 'Name', ''], ['warehouses', 'Location', ' '], ['warehouses', 'Capacity', ''],
   ['warehouses', 'Capacity', '-1'], ['warehouses', 'Capacity', '1.5'], ['warehouses', 'Capacity', '2147483648'],

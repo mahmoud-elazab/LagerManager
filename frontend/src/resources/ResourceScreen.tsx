@@ -1,7 +1,7 @@
 import { DeletePanel } from '../deletion/DeletePanel'
 import { CreatePanel } from '../creation/CreatePanel'
 import { EditPanel } from '../editing/EditPanel'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { InventoryScreen } from './InventoryScreen'
 import type { LoginResponse } from '../auth/loginApi'
 import type { Warehouse } from './resourceApi'
@@ -58,9 +58,10 @@ function WarehouseScreen({ resource, session, expireSession, canCreate = false, 
 
   function reload() { setOwner(session); setState({ kind: 'loading' }); setAttempt((value) => value + 1) }
 
+  const focusHeading = useCallback((element: HTMLHeadingElement | null) => element?.focus(), [])
   return <div className="products-screen">
     <header className="products-header">
-      <h2 tabIndex={-1} ref={(element) => element?.focus()}>{screen.title}</h2>
+      <h2 tabIndex={-1} ref={focusHeading}>{screen.title}</h2>
     </header>
     {canCreate && !selection && <CreatePanel resource="warehouses" session={session} expireSession={expireSession} reload={reload} listReady={state.kind === 'ready'} />}
     {canCreate && selection?.action === 'edit' && <EditPanel key={selection.version} resource="warehouses" record={selection.record} session={session}
@@ -75,12 +76,12 @@ function WarehouseScreen({ resource, session, expireSession, canCreate = false, 
     {state.kind === 'ready' && (state.rows.length === 0 ? <p role="status">No {resource} found.</p> :
       <div className="table-scroll" role="region" aria-label={`${screen.title} list`} tabIndex={0}>
         <table aria-label={screen.title}>
-          <thead><tr>{screen.headers.map((header) => <th key={header} scope="col">{header}</th>)}{(canCreate || canDelete) && <th scope="col">Actions</th>}</tr></thead>
+          <thead><tr>{screen.headers.map((header) => <th key={header} scope="col" className={header === 'Capacity' ? 'numeric' : undefined}>{header}</th>)}{(canCreate || canDelete) && <th scope="col" className="actions-cell">Actions</th>}</tr></thead>
           <tbody>{state.rows.map((warehouse, index) => <tr key={warehouse.id ?? `missing-${index}`}>
-            <td>{warehouse.name ?? 'Not specified'}</td><td>{warehouse.location ?? 'Not specified'}</td><td>{warehouse.capacity}</td>
-            {(canCreate || canDelete) && <td>{validRecordId(warehouse.id) && <>{canCreate && <button aria-label={`Edit warehouse ${warehouse.id}`}
+            <td>{warehouse.name ?? 'Not specified'}</td><td>{warehouse.location ?? 'Not specified'}</td><td className="numeric">{warehouse.capacity}</td>
+            {(canCreate || canDelete) && <td className="actions-cell">{validRecordId(warehouse.id) && <>{canCreate && <button aria-label={`Edit warehouse ${warehouse.id}`}
               onClick={() => setSelection({ record: warehouse, version: ++editVersion.current, session, action: 'edit' })}>Edit</button>}
-              {canDelete && <button aria-label={`Delete warehouse ${warehouse.id}`}
+              {canDelete && <button className="button-danger" aria-label={`Delete warehouse ${warehouse.id}`}
                 onClick={() => setSelection({ record: warehouse, version: ++editVersion.current, session, action: 'delete' })}>Delete</button>}</>}</td>}
           </tr>)}</tbody>
         </table>

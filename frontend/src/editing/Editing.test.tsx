@@ -6,7 +6,7 @@ import type { EditableResource } from './updateApi'
 
 const session = { token: 'fictional-session', tokenType: 'Bearer' as const }
 const account = { email: 'fictional@example.com', role: 'ADMIN' }
-const product = { id: 17, name: 'Example crate', sku: 'EX-1', description: 'Keep this description', category: 'Storage', quantity: 3, price: 12.5 }
+const product = { id: 17, name: 'Example crate', sku: 'EX-1', description: 'Keep this description', category: 'Storage', totalStock: 3, price: 12.5 }
 const warehouse = { id: 27, name: 'Example depot', location: 'Example location', capacity: 40 }
 const resources: EditableResource[] = ['products', 'warehouses']
 const fetchMock = vi.fn<typeof fetch>()
@@ -82,7 +82,7 @@ it.each(resources)('populates every %s field and cancels without mutation', asyn
   await start(resource); await edit(resource)
   expect(screen.getByLabelText<HTMLInputElement>('Name').value).toBe(record(resource).name)
   if (resource === 'products') {
-    for (const [label, value] of [['SKU', product.sku], ['Description', product.description], ['Category', product.category], ['Quantity', '3'], ['Price', '12.5']]) {
+    for (const [label, value] of [['SKU', product.sku], ['Description', product.description], ['Category', product.category], ['Price', '12.5']]) {
       expect(screen.getByLabelText<HTMLInputElement>(label).value).toBe(value)
     }
   } else {
@@ -105,7 +105,7 @@ it.each(resources)('sends an exact matching-ID authenticated %s PUT and confirms
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Saving…' }).disabled).toBe(true)
   expect(screen.getByLabelText<HTMLInputElement>('Name').disabled).toBe(true)
   expect(listMock.mock.calls.length).toBe(initialReads)
-  const body = resource === 'products' ? '{"name":"Example crate","sku":"EX-1","description":"Keep this description","category":"Storage","quantity":3,"price":12.5}'
+  const body = resource === 'products' ? '{"name":"Example crate","sku":"EX-1","description":"Keep this description","category":"Storage","price":12.5}'
     : '{"name":"Example depot","location":"Example location","capacity":40}'
   expect(putMock).toHaveBeenCalledExactlyOnceWith(`/api/${resource}/${record(resource).id}`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
@@ -169,16 +169,16 @@ it('rejects malformed description data instead of dropping it', async () => {
 it.each(resources)('accepts zero values for %s', async (resource) => {
   putMock.mockResolvedValue(Response.json(record(resource)))
   await start(resource); await edit(resource)
-  change(resource === 'products' ? 'Quantity' : 'Capacity', '0')
-  if (resource === 'products') change('Price', '0')
+  change(resource === 'products' ? 'Price' : 'Capacity', '0')
   save(); await screen.findByText(/updated\. If/)
   const body = JSON.parse(putMock.mock.calls[0][1]!.body as string)
-  expect(body[resource === 'products' ? 'quantity' : 'capacity']).toBe(0)
+  expect(body[resource === 'products' ? 'price' : 'capacity']).toBe(0)
+  if (resource === 'products') expect(body).not.toHaveProperty('quantity')
 })
 
 it.each([
-  ['products', 'Name', ' '], ['products', 'SKU', ''], ['products', 'Quantity', ''], ['products', 'Quantity', '-1'],
-  ['products', 'Quantity', '1.5'], ['products', 'Quantity', '2147483648'], ['products', 'Price', ''],
+  ['products', 'Name', ' '], ['products', 'SKU', ''],  
+    ['products', 'Price', ''],
   ['products', 'Price', '-1'], ['products', 'Price', '1e3'], ['products', 'Price', 'not a price'],
   ['warehouses', 'Name', ''], ['warehouses', 'Location', ' '], ['warehouses', 'Capacity', ''],
   ['warehouses', 'Capacity', '-1'], ['warehouses', 'Capacity', '1.5'], ['warehouses', 'Capacity', '2147483648'],

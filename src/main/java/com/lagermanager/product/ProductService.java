@@ -21,7 +21,7 @@ public class ProductService {
     }
 
     public Product createProduct(Product product) {
-        return productRepository.save(product);
+        return productRepository.saveAndFlush(product);
     }
 
     public List<Product> getAllProducts() {
@@ -40,10 +40,9 @@ public class ProductService {
         product.setName(updatedProduct.getName());
         product.setSku(updatedProduct.getSku());
         product.setDescription(updatedProduct.getDescription());
-        product.setQuantity(updatedProduct.getQuantity());
         product.setPrice(updatedProduct.getPrice());
         product.setCategory(updatedProduct.getCategory());
-        return productRepository.save(product);
+        return productRepository.saveAndFlush(product);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)

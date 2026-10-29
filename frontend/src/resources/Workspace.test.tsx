@@ -4,7 +4,7 @@ import App from '../App'
 import { ResourceScreen } from './ResourceScreen'
 
 const session = { token: 'fictional-test-session', tokenType: 'Bearer' }
-const product = { description: null, id: 1, name: 'Fictional crate', sku: 'DEMO', category: null, quantity: 999, price: null }
+const product = { description: null, id: 1, name: 'Fictional crate', sku: 'DEMO', category: null, totalStock: 999, price: null }
 const warehouse = { id: 2, name: 'Fictional depot', location: 'Example location', capacity: 80 }
 const inventory = { id: 3, product, warehouse, quantity: 12 }
 const resources = ['warehouses', 'inventory'] as const
@@ -157,7 +157,7 @@ it.each(resources.flatMap((resource) => malformed.map((body, index) => ({ resour
 
 it.each([
   { ...inventory, quantity: null }, { ...inventory, quantity: 1.5 }, { ...inventory, quantity: 2147483648 },
-  { ...inventory, product: [] }, { ...inventory, product: { ...product, quantity: null } },
+  { ...inventory, product: [] }, { ...inventory, product: { ...product, totalStock: null } },
   { ...inventory, warehouse: { ...warehouse, capacity: null } }, { ...inventory, warehouse: 'invalid' },
 ])('rejects malformed nested inventory %#', async (body) => {
   await start(); dataMock.mockResolvedValue(Response.json([body])); navigate('inventory')

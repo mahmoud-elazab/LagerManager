@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doAnswer;
 
 @SpringBootTest(classes = LagermanagerApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.test.context.ActiveProfiles("test")
 @EnabledIf("com.lagermanager.support.DisposableMySql#isAvailable")
 class InventoryReferencePersistenceTests {
     @DynamicPropertySource
