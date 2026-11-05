@@ -40,6 +40,12 @@ After login, GET `/api/auth/me` confirms email and one of ADMIN, MANAGER or EMPL
 
 The backend remains authoritative. A changed database role can produce 403 even after `/me` allowed controls. 403 retains the session; only a matching current-session 401 signs out and asks for login again. Obsolete responses, including 401, are aborted/ignored after navigation, unmount, selection changes or logout/session changes. No old response may update another view or expire a newer session.
 
+## Accounts
+
+After Admin role confirmation, choose **Accounts** to list account email, role and enabled status. **Add account** uses the same email/password rules as public registration and lets you set role/status. **Edit** changes role and enabled status without changing email/password. Removing your own Admin access ends your local session. Backend checks use current database roles/status for every authenticated request. Managers and Employees do not see Accounts. Public registration keeps Admin, Manager and Employee choices. No account deletion or password-reset controls are provided.
+
+Account requests have pending-submit guards and safe errors. Uncertain saves require a read-only reload before retrying; logout/navigation abort and ignore stale responses. Save confirmation remains separate from list-refresh failure.
+
 ## Lists and forms
 
 Only the selected resource loads. Loading, empty, safe error and read-only Retry states are provided. All data is runtime-validated against nullable backend fields. Long values wrap and tables retain accessible names/column headers.

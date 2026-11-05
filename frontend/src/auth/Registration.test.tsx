@@ -8,6 +8,7 @@ function open() {
   vi.stubGlobal('fetch', fetchMock)
   const view = render(<App />)
   fireEvent.click(screen.getByRole('button', { name: 'Registration' }))
+  expect(screen.queryByText(/Local registration allows anyone/)).toBeNull()
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.com' } })
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: ' new password ' } })
   return view

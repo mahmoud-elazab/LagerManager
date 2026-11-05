@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
+import { validAccountInput } from './accountValidation'
 import type { LoginInput } from './loginApi'
 
 type LoginFormProps = {
@@ -24,9 +25,7 @@ export function LoginForm({ signIn, pending, error }: LoginFormProps) {
   async function register() {
     if (submitting.current) return
     setRegistrationError('')
-    if (email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-      || !password.trim() || new TextEncoder().encode(password).length > 72
-      || !['ADMIN', 'MANAGER', 'EMPLOYEE'].includes(role)) {
+    if (!validAccountInput(email, password, role)) {
       setRegistrationError('Enter a valid email, a nonblank password of at most 72 UTF-8 bytes, and a role.')
       return
     }

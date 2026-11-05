@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/accounts", "/api/accounts/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/auth/me")
                         .hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
                         .requestMatchers(HttpMethod.GET, "/api/inventory/{id}/movements")

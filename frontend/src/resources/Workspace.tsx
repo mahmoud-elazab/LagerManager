@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import type { LoginResponse } from '../auth/loginApi'
 import { ProductsScreen } from '../products/ProductsScreen'
+import { AccountsScreen } from '../accounts/AccountsScreen'
 import { ResourceScreen } from './ResourceScreen'
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
 }
 
 export function Workspace(props: Props) {
-  const [selected, setSelected] = useState<'products' | 'warehouses' | 'inventory'>('products')
+  const [selected, setSelected] = useState<'products' | 'warehouses' | 'inventory' | 'accounts'>('products')
   const account = useCurrentUser(props.session, props.expireSession)
   const canCreate = account.state.kind === 'ready' && ['ADMIN', 'MANAGER'].includes(account.state.user.role)
   const canDelete = account.state.kind === 'ready' && account.state.user.role === 'ADMIN'
@@ -27,9 +28,12 @@ export function Workspace(props: Props) {
       {(['products', 'warehouses', 'inventory'] as const).map((resource) =>
         <button key={resource} aria-current={selected === resource ? 'page' : undefined}
           onClick={() => setSelected(resource)}>{resource[0].toUpperCase() + resource.slice(1)}</button>)}
+      {canDelete && <button aria-current={selected === 'accounts' ? 'page' : undefined} onClick={() => setSelected('accounts')}>Accounts</button>}
     </nav>
     <section className="workspace-content" aria-label="Resource workspace">
-    {selected === 'products' ? <ProductsScreen {...props} canCreate={canCreate} canDelete={canDelete} />
+    {selected === 'accounts' ? (canDelete && account.state.kind === 'ready'
+      ? <AccountsScreen {...props} currentEmail={account.state.user.email} /> : <p role="alert">Access denied. Only Admins can manage accounts.</p>)
+      : selected === 'products' ? <ProductsScreen {...props} canCreate={canCreate} canDelete={canDelete} />
       : <ResourceScreen key={selected} resource={selected} {...props} canCreate={canCreate} canDelete={canDelete} />}
     </section>
   </>

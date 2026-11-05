@@ -55,10 +55,40 @@ Backend authorization uses the user's current database role, never the role clai
 | Receive, issue, adjust stock; view history | Yes | Yes | Yes |
 | Same-quantity inventory metadata PUT (API only; lifecycle restrictions apply) | Yes | Yes | No |
 | Delete products, warehouses, inventory | Yes | No | No |
+| List/create accounts; change account roles and enabled status | Yes | No | No |
 
 POST `/api/auth/login` and `/api/auth/register` are public. Local registration accepts email, a nonblank password of at most 72 UTF-8 bytes, and ADMIN, MANAGER or EMPLOYEE. It inserts an enabled account using the existing BCrypt encoder; duplicate emails return 409 without changing the account. Registration returns 201 with email, without signing in. Other resource operations require authentication: missing/invalid authentication is 401; insufficient permission is 403. Ordinary `/error` requests remain protected; internal error dispatch preserves the original status. No role hierarchy is used.
 
 The UI keeps tokens only in React memory. Logout clears the local session; refresh requires login. Tokens last 60 minutes, with no refresh-token flow or backend logout/revocation endpoint. Aborting a request or signing out does not undo a server-side mutation. Mutation outcomes are confirmed before success is displayed; uncertain failures offer a read-only reload instead of automatic retries.
+
+## Accounts
+
+Admins have an **Accounts** tab after their role is confirmed. It lists email, role and enabled status. **Add account** takes email, password, role and enabled status; **Edit** changes only role and status. Changes to your own account that remove Admin access sign you out. Disabled users cannot sign in or use an existing JWT while disabled. Public registration still offers all three roles and always creates an enabled account.
+
+Admin-only API: GET `/api/accounts` returns `{id,email,role,enabled}` rows sorted by email; POST `/api/accounts` accepts `{email,password,role,enabled}` and returns the created row (201); PUT `/api/accounts/{id}` accepts `{role,enabled}` and returns the saved row (200). Enabled must be a JSON boolean. Invalid details return 400, duplicate email 409 and a missing update target 404. Responses never include password hashes. Email/password changes, password resets and account deletion are outside this feature.
+
+## Low-stock summary (opt-in)
+
+The backend can periodically log products whose inventory-derived **total stock across all warehouses is at or below a threshold**. It reuses the existing product total, includes zero stock (including products with no inventory), and runs in a read-only transaction. The legacy product quantity is ignored. No notifications, stock changes or new tables are involved.
+
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `LAGERMANAGER_LOW_STOCK_ENABLED` | `false` | Explicitly enable the job; otherwise no job or scheduling infrastructure is registered. |
+| `LAGERMANAGER_LOW_STOCK_INTERVAL` | `PT2H` | ISO-8601 duration between completion of one check and the next. Also the delay before the first check. Must be at least one millisecond. |
+| `LAGERMANAGER_LOW_STOCK_THRESHOLD` | `10` | Nonnegative whole-number threshold, inclusive; zero checks for zero stock. |
+
+With your existing backend datasource/JWT environment already configured, enable it in IntelliJ's run environment or start the local backend with:
+
+```sh
+LAGERMANAGER_LOW_STOCK_ENABLED=true \
+LAGERMANAGER_LOW_STOCK_INTERVAL=PT30S \
+LAGERMANAGER_LOW_STOCK_THRESHOLD=5 \
+./mvnw spring-boot:run
+```
+
+Watch the backend console for INFO messages from `com.lagermanager.lowstock.LowStockCheck`, such as `Low-stock check: threshold=5, matched=1, products=[ProductStock[id=1, sku=TEST, name=Bolts, totalStock=4]]`. No matches still logs `matched=0, products=[]`. Set the logger to INFO if your local logging configuration suppresses these messages. Stop the backend normally; unset the opt-in or set it to false before restarting to disable the job. Equivalent Spring properties are `lagermanager.low-stock.enabled`, `.interval` and `.threshold`. Invalid settings fail startup when the job is enabled.
+
+This first slice loads all products for each check and logs all matches on every run. There is no deduplication or coordination across application instances; each enabled backend runs its own job. The normal Docker stack/configuration is unchanged; Compose does not automatically forward these new variables from its `.env`. Tests invoke the check directly against disposable MySQL and verify scheduler registration without waiting for a timer.
 
 ## Automated verification
 
