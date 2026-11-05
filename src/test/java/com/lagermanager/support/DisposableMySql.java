@@ -85,6 +85,7 @@ public final class DisposableMySql {
                     try (var statement = connection.createStatement()) {
                         statement.execute("ALTER USER 'root'@'localhost' IDENTIFIED BY '" + PASSWORD + "'");
                         statement.execute("CREATE DATABASE lagermanager_context_test");
+                        statement.execute("CREATE DATABASE lagermanager_registration_test");
                         statement.execute("CREATE DATABASE lagermanager_reference_test");
                         statement.execute("CREATE DATABASE lagermanager_demo_test");
                     }

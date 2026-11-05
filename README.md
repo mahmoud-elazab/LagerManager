@@ -56,7 +56,7 @@ Backend authorization uses the user's current database role, never the role clai
 | Same-quantity inventory metadata PUT (API only; lifecycle restrictions apply) | Yes | Yes | No |
 | Delete products, warehouses, inventory | Yes | No | No |
 
-POST `/api/auth/login` is public. Other resource operations require authentication: missing/invalid authentication is 401; insufficient permission is 403. Ordinary `/error` requests remain protected; internal error dispatch preserves the original status. No role hierarchy is used.
+POST `/api/auth/login` and `/api/auth/register` are public. Local registration accepts email, a nonblank password of at most 72 UTF-8 bytes, and ADMIN, MANAGER or EMPLOYEE. It inserts an enabled account using the existing BCrypt encoder; duplicate emails return 409 without changing the account. Registration returns 201 with email, without signing in. Other resource operations require authentication: missing/invalid authentication is 401; insufficient permission is 403. Ordinary `/error` requests remain protected; internal error dispatch preserves the original status. No role hierarchy is used.
 
 The UI keeps tokens only in React memory. Logout clears the local session; refresh requires login. Tokens last 60 minutes, with no refresh-token flow or backend logout/revocation endpoint. Aborting a request or signing out does not undo a server-side mutation. Mutation outcomes are confirmed before success is displayed; uncertain failures offer a read-only reload instead of automatic retries.
 
@@ -86,6 +86,8 @@ Backend database tests start a new loopback-only MySQL process with a fresh temp
 If no suitable binary exists, `LagermanagerApplicationTests`, `InventoryReferencePersistenceTests` and `StockPersistenceTests` are explicitly skipped. Inspect the skipped count: a skipped run provides no persistence evidence. Startup failure with an available binary fails rather than connecting elsewhere. Some environments need permission for local ports, subprocesses and Mockito agent attachment. No Docker setup or dependency installation is required for this test infrastructure.
 
 Frontend tests use mocked fetch with fictional data. Browser checks against HTTP fixtures verify the real rendered client, not the actual backend or database. The backend's real-MySQL integration tests independently verify foreign keys, transactions and deletion races; they are not full browser-to-backend end-to-end tests.
+
+The repeatable full-stack smoke test is `python3 scripts/compose-smoke.py`; see [disposable Compose smoke testing](docs/compose-smoke.md). It uses a fresh project/volume, unique image tags and generated credentials, then cleans up its own resources.
 
 ## Further documentation
 

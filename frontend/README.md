@@ -22,13 +22,13 @@ Real login requires MySQL and the backend configured with `LAGERMANAGER_JWT_SECR
 
 Vite forwards relative `/api` URLs to localhost:8080 and preserves the path. Update `vite.config.ts` if choosing another backend port. This proxy is for development only. The container uses the separate Nginx proxy documented above; deployment remains outside this step. No backend CORS changes are needed. `npm run preview -- --host localhost` previews the static build; it is not proof of production connectivity.
 
-The existing local lagermanager database is the authorized demo database. Its named demo accounts are provisioned; use the ignored private account file and preserve unrelated existing records. No special profile or separate database is required. Automated tests remain isolated with fictional fixtures; there is no registration or automatic user creation during normal startup.
+The existing local lagermanager database is the authorized demo database. Its named demo accounts are provisioned; use the ignored private account file and preserve unrelated existing records. No special profile or separate database is required. Automated tests remain isolated with fictional fixtures; normal startup does not automatically create users. The sign-in screen offers explicit local registration.
 
 ## Authentication and permissions
 
 Login sends email and the unchanged password to POST `/api/auth/login`. A runtime-validated response must contain a nonempty token and `tokenType: "Bearer"`. Password input clears after successful login. The token and current-user details stay in React memory: no browser storage, cookies, URLs, token rendering or logging. JWT claims are not decoded for authorization.
 
-After login, GET `/api/auth/me` confirms email and one of ADMIN, MANAGER or EMPLOYEE. Until confirmation, creation, product/warehouse editing and deletion controls stay hidden. Account loading/errors have Retry, and Logout remains available. Logout clears the session; refreshing requires login again. There is no backend logout, registration, refresh token or routing library.
+After login, GET `/api/auth/me` confirms email and one of ADMIN, MANAGER or EMPLOYEE. Until confirmation, creation, product/warehouse editing and deletion controls stay hidden. Account loading/errors have Retry, and Logout remains available. Logout clears the session; refreshing requires login again. There is no backend logout, refresh token or routing library. The Registration button opens an email/password/role form. Anyone can choose Admin, Manager or Employee for this local version. Success returns to sign-in with confirmation, email retained and password cleared. Duplicate emails and invalid input show errors; uncertain failures advise trying sign-in before another registration.
 
 | Frontend operation | ADMIN | MANAGER | EMPLOYEE |
 | --- | --- | --- | --- |
